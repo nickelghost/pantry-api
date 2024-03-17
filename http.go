@@ -108,6 +108,8 @@ func CreateLocationHandler(repo Repo) http.HandlerFunc {
 			log.Println(err)
 			return
 		}
+
+		w.WriteHeader(http.StatusCreated)
 	}
 }
 
@@ -128,6 +130,8 @@ func UpdateLocationHandler(repo Repo) http.HandlerFunc {
 			log.Println(err)
 			return
 		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -140,6 +144,8 @@ func DeleteLocationHandler(repo Repo) http.HandlerFunc {
 			log.Println(err)
 			return
 		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -157,6 +163,8 @@ func CreateItemHandler(repo Repo) http.HandlerFunc {
 			log.Println(err)
 			return
 		}
+
+		w.WriteHeader(http.StatusCreated)
 	}
 }
 
@@ -175,6 +183,8 @@ func UpdateItemHandler(repo Repo) http.HandlerFunc {
 			log.Println(err)
 			return
 		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -195,6 +205,8 @@ func UpdateItemQuantityHandler(repo Repo) http.HandlerFunc {
 			log.Println(err)
 			return
 		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -215,6 +227,8 @@ func UpdateItemLocationHandler(repo Repo) http.HandlerFunc {
 			log.Println(err)
 			return
 		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -227,5 +241,7 @@ func DeleteItemHandler(repo Repo) http.HandlerFunc {
 			log.Println(err)
 			return
 		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
