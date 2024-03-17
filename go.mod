@@ -3,7 +3,9 @@ module github.com/nickelghost/pantry-api
 go 1.22.1
 
 require (
+	github.com/aws/aws-lambda-go v1.46.0
 	github.com/aws/aws-sdk-go v1.51.1
+	github.com/awslabs/aws-lambda-go-api-proxy v0.16.1
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/google/uuid v1.6.0
 	github.com/magefile/mage v1.15.0

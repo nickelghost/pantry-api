@@ -14,11 +14,3 @@ func TestMain(m *testing.M) {
 
 	os.Exit(exitVal)
 }
-
-func TestMainFunc(t *testing.T) {
-	main()
-
-	if validate == nil {
-		t.Error("validate was not initialised")
-	}
-}
