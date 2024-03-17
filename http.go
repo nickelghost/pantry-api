@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -40,6 +41,7 @@ func IndexLocationsHandler(repo Repo) http.HandlerFunc {
 		locs, remItems, err := GetLocations(repo, search, tags)
 		if err != nil {
 			w.WriteHeader(500)
+			log.Println(err)
 			return
 		}
 
@@ -50,6 +52,7 @@ func IndexLocationsHandler(repo Repo) http.HandlerFunc {
 		}{Locations: locs, RemainingItems: remItems}
 		if err := json.NewEncoder(w).Encode(res); err != nil {
 			w.WriteHeader(500)
+			log.Println(err)
 			return
 		}
 	}
@@ -73,6 +76,7 @@ func GetLocationHandler(repo Repo) http.HandlerFunc {
 		loc, err := GetLocation(repo, id, search, tags)
 		if err != nil {
 			w.WriteHeader(500)
+			log.Println(err)
 			return
 		}
 
@@ -82,6 +86,7 @@ func GetLocationHandler(repo Repo) http.HandlerFunc {
 		}{Location: loc}
 		if err := json.NewEncoder(w).Encode(res); err != nil {
 			w.WriteHeader(500)
+			log.Println(err)
 			return
 		}
 	}
@@ -94,11 +99,13 @@ func CreateLocationHandler(repo Repo) http.HandlerFunc {
 		}{}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			w.WriteHeader(400)
+			log.Println(err)
 			return
 		}
 
 		if err := CreateLocation(repo, body.Name); err != nil {
 			w.WriteHeader(500)
+			log.Println(err)
 			return
 		}
 	}
@@ -112,11 +119,13 @@ func UpdateLocationHandler(repo Repo) http.HandlerFunc {
 		}{}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			w.WriteHeader(400)
+			log.Println(err)
 			return
 		}
 
 		if err := UpdateLocation(repo, id, body.Name); err != nil {
 			w.WriteHeader(500)
+			log.Println(err)
 			return
 		}
 	}
@@ -128,6 +137,7 @@ func DeleteLocationHandler(repo Repo) http.HandlerFunc {
 
 		if err := DeleteLocation(repo, id); err != nil {
 			w.WriteHeader(500)
+			log.Println(err)
 			return
 		}
 	}
@@ -138,11 +148,13 @@ func CreateItemHandler(repo Repo) http.HandlerFunc {
 		var body WriteItemParams
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			w.WriteHeader(400)
+			log.Println(err)
 			return
 		}
 
 		if err := CreateItem(repo, body); err != nil {
 			w.WriteHeader(500)
+			log.Println(err)
 			return
 		}
 	}
@@ -154,11 +166,13 @@ func UpdateItemHandler(repo Repo) http.HandlerFunc {
 		var body WriteItemParams
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			w.WriteHeader(400)
+			log.Println(err)
 			return
 		}
 
 		if err := UpdateItem(repo, id, body); err != nil {
 			w.WriteHeader(500)
+			log.Println(err)
 			return
 		}
 	}
@@ -172,11 +186,13 @@ func UpdateItemQuantityHandler(repo Repo) http.HandlerFunc {
 		}{}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			w.WriteHeader(400)
+			log.Println(err)
 			return
 		}
 
 		if err := UpdateItemQuantity(repo, id, body.Quantity); err != nil {
 			w.WriteHeader(500)
+			log.Println(err)
 			return
 		}
 	}
@@ -190,11 +206,13 @@ func UpdateItemLocationHandler(repo Repo) http.HandlerFunc {
 		}{}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			w.WriteHeader(400)
+			log.Println(err)
 			return
 		}
 
 		if err := UpdateItemLocation(repo, id, body.LocationID); err != nil {
 			w.WriteHeader(500)
+			log.Println(err)
 			return
 		}
 	}
@@ -206,6 +224,7 @@ func DeleteItemHandler(repo Repo) http.HandlerFunc {
 
 		if err := DeleteItem(repo, id); err != nil {
 			w.WriteHeader(500)
+			log.Println(err)
 			return
 		}
 	}
