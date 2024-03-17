@@ -14,7 +14,7 @@ type Item struct {
 	ExpiresAt      *time.Time `json:"expiresAt"`
 	Quantity       *int       `json:"quantity"`
 	QuantityTarget *int       `json:"quantityTarget"`
-	LocationID     *string    `json:"locationId,omitempty"`
+	LocationID     *string    `json:"locationId"`
 	Location       *Location  `json:"location,omitempty"`
 }
 
@@ -29,7 +29,7 @@ type WriteItemParams struct {
 	ExpiresAt      *time.Time `json:"expiresAt"`
 	Quantity       *int       `json:"quantity"`
 	QuantityTarget *int       `json:"quantityTarget"`
-	LocationID     *string    `json:"locationId,omitempty"`
+	LocationID     *string    `json:"locationId"`
 }
 
 func CreateItem(repo Repo, params WriteItemParams) error {
