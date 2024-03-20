@@ -4,10 +4,32 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 )
 
-func GetRouter(repo Repo) *http.ServeMux {
+func UseCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+
+		for _, allowedOrigin := range strings.Split(os.Getenv("ACCESS_CONTROL_ALLOW_ORIGIN"), ",") {
+			if allowedOrigin == origin {
+				w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+			}
+		}
+
+		w.Header().Set("Access-Control-Allow-Headers", os.Getenv("ACCESS_CONTROL_ALLOW_HEADERS"))
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func GetRouter(repo Repo) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /locations", IndexLocationsHandler(repo))
@@ -21,7 +43,11 @@ func GetRouter(repo Repo) *http.ServeMux {
 	mux.HandleFunc("PATCH /items/{id}/location", UpdateItemLocationHandler(repo))
 	mux.HandleFunc("DELETE /items/{id}", DeleteItemHandler(repo))
 
-	return mux
+	var handler http.Handler = mux
+
+	handler = UseCORS(handler)
+
+	return handler
 }
 
 func IndexLocationsHandler(repo Repo) http.HandlerFunc {
