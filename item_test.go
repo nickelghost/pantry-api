@@ -9,16 +9,14 @@ import (
 func TestCreateItem(t *testing.T) {
 	mockRepo := &MockRepo{}
 	params := WriteItemParams{
-		Name:           "Cheese",
-		Type:           getPtr("250g"),
-		Tags:           []string{"dairy", "smelly"},
-		ImageURL:       nil,
-		Price:          getPtr(1499),
-		BoughtAt:       time.Now(),
-		ExpiresAt:      getPtr(time.Now().Add(time.Hour * 240)), // 10 days
-		Quantity:       getPtr(1),
-		QuantityTarget: getPtr(2),
-		LocationID:     getPtr("my-loc"),
+		Name:       "Cheese",
+		Type:       getPtr("250g"),
+		Tags:       []string{"dairy", "smelly"},
+		ImageURL:   nil,
+		Price:      getPtr(1499),
+		BoughtAt:   time.Now(),
+		ExpiresAt:  getPtr(time.Now().Add(time.Hour * 240)), // 10 days
+		LocationID: getPtr("my-loc"),
 	}
 
 	err := CreateItem(mockRepo, params)
@@ -39,16 +37,14 @@ func TestUpdateItem(t *testing.T) {
 	mockRepo := &MockRepo{}
 	id := "cheese"
 	params := WriteItemParams{
-		Name:           "Cheese",
-		Type:           getPtr("250g"),
-		Tags:           []string{"dairy", "smelly"},
-		ImageURL:       nil,
-		Price:          getPtr(1499),
-		BoughtAt:       time.Now(),
-		ExpiresAt:      getPtr(time.Now().Add(time.Hour * 240)), // 10 days
-		Quantity:       getPtr(1),
-		QuantityTarget: getPtr(2),
-		LocationID:     getPtr("my-loc"),
+		Name:       "Cheese",
+		Type:       getPtr("250g"),
+		Tags:       []string{"dairy", "smelly"},
+		ImageURL:   nil,
+		Price:      getPtr(1499),
+		BoughtAt:   time.Now(),
+		ExpiresAt:  getPtr(time.Now().Add(time.Hour * 240)), // 10 days
+		LocationID: getPtr("my-loc"),
 	}
 
 	err := UpdateItem(mockRepo, id, params)

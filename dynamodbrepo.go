@@ -231,33 +231,29 @@ func (repo DynamoDBRepo) GetItems(
 }
 
 type DynamoDBWriteItemParams struct {
-	Name           string     `json:":name"`
-	Type           *string    `json:":type"`
-	Tags           []string   `json:":tags"`
-	Price          *int       `json:":price"`
-	ImageURL       *string    `json:":imageUrl"`
-	BoughtAt       time.Time  `json:":boughtAt"`
-	OpenedAt       *time.Time `json:":openedAt"`
-	ExpiresAt      *time.Time `json:":expiresAt"`
-	Quantity       *int       `json:":quantity"`
-	QuantityTarget *int       `json:":quantityTarget"`
-	LocationID     *string    `json:":locationId"`
+	Name       string     `json:":name"`
+	Type       *string    `json:":type"`
+	Tags       []string   `json:":tags"`
+	Price      *int       `json:":price"`
+	ImageURL   *string    `json:":imageUrl"`
+	BoughtAt   time.Time  `json:":boughtAt"`
+	OpenedAt   *time.Time `json:":openedAt"`
+	ExpiresAt  *time.Time `json:":expiresAt"`
+	LocationID *string    `json:":locationId"`
 }
 
 func (repo DynamoDBRepo) CreateItem(params WriteItemParams) error {
 	i := Item{
-		ID:             uuid.NewString(),
-		Name:           params.Name,
-		Type:           params.Type,
-		Tags:           params.Tags,
-		Price:          params.Price,
-		ImageURL:       params.ImageURL,
-		BoughtAt:       params.BoughtAt,
-		OpenedAt:       params.OpenedAt,
-		ExpiresAt:      params.ExpiresAt,
-		Quantity:       params.Quantity,
-		QuantityTarget: params.QuantityTarget,
-		LocationID:     params.LocationID,
+		ID:         uuid.NewString(),
+		Name:       params.Name,
+		Type:       params.Type,
+		Tags:       params.Tags,
+		Price:      params.Price,
+		ImageURL:   params.ImageURL,
+		BoughtAt:   params.BoughtAt,
+		OpenedAt:   params.OpenedAt,
+		ExpiresAt:  params.ExpiresAt,
+		LocationID: params.LocationID,
 	}
 
 	dynamoItem, err := dynamodbattribute.MarshalMap(i)

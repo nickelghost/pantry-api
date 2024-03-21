@@ -19,17 +19,15 @@ type Item struct {
 }
 
 type WriteItemParams struct {
-	Name           string     `json:"name"`
-	Type           *string    `json:"type"`
-	Tags           []string   `json:"tags"`
-	Price          *int       `json:"price"`
-	ImageURL       *string    `json:"imageUrl"`
-	BoughtAt       time.Time  `json:"boughtAt"`
-	OpenedAt       *time.Time `json:"openedAt"`
-	ExpiresAt      *time.Time `json:"expiresAt"`
-	Quantity       *int       `json:"quantity"`
-	QuantityTarget *int       `json:"quantityTarget"`
-	LocationID     *string    `json:"locationId"`
+	Name       string     `json:"name"`
+	Type       *string    `json:"type"`
+	Tags       []string   `json:"tags"`
+	Price      *int       `json:"price"`
+	ImageURL   *string    `json:"imageUrl"`
+	BoughtAt   time.Time  `json:"boughtAt"`
+	OpenedAt   *time.Time `json:"openedAt"`
+	ExpiresAt  *time.Time `json:"expiresAt"`
+	LocationID *string    `json:"locationId"`
 }
 
 func CreateItem(repo Repo, params WriteItemParams) error {
