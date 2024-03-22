@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -32,7 +32,7 @@ func main() {
 	} else {
 		srv := GetServer(handler)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalln(err)
+			slog.Error("failed to start server", "err", err)
 		}
 	}
 }
