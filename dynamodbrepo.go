@@ -310,37 +310,8 @@ func (repo DynamoDBRepo) UpdateItem(id string, params WriteItemParams) error {
 			boughtAt = :boughtAt,
 			openedAt = :openedAt,
 			expiresAt = :expiresAt,
-			quantity = :quantity,
-			quantityTarget = :quantityTarget,
 			locationId = :locationId
 		`),
-	})
-	if err != nil {
-		return fmt.Errorf("dynamodb update item: %w", err)
-	}
-
-	return nil
-}
-
-func (repo DynamoDBRepo) UpdateItemQuantity(id string, quantity *int) error {
-	attrs, err := dynamodbattribute.MarshalMap(struct {
-		Quantity *int `json:":quantity"`
-	}{
-		Quantity: quantity,
-	})
-	if err != nil {
-		return fmt.Errorf("update fields marshal: %w", err)
-	}
-
-	_, err = repo.client.UpdateItem(&dynamodb.UpdateItemInput{
-		TableName: &repo.itemsTable,
-		Key: map[string]*dynamodb.AttributeValue{
-			"id": {
-				S: &id,
-			},
-		},
-		ExpressionAttributeValues: attrs,
-		UpdateExpression:          aws.String(`set quantity = :quantity`),
 	})
 	if err != nil {
 		return fmt.Errorf("dynamodb update item: %w", err)

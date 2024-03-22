@@ -99,14 +99,6 @@ func (repo *MockRepo) UpdateItem(id string, params WriteItemParams) error {
 	return nil
 }
 
-func (repo *MockRepo) UpdateItemQuantity(id string, quantity *int) error {
-	repo.UpdateItemQuantityCalls++
-	repo.UpdateItemQuantityID = id
-	repo.UpdateItemQuantityValue = quantity
-
-	return nil
-}
-
 func (repo *MockRepo) UpdateItemLocation(id string, locationID *string) error {
 	repo.UpdateItemLocationCalls++
 	repo.UpdateItemLocationID = id

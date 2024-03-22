@@ -4,11 +4,14 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/go-playground/validator/v10"
 )
 
 func TestCreateItem(t *testing.T) {
 	t.Parallel()
 
+	validate := validator.New(validator.WithRequiredStructEnabled())
 	mockRepo := &MockRepo{}
 	params := WriteItemParams{
 		Name:       "Cheese",
@@ -21,7 +24,7 @@ func TestCreateItem(t *testing.T) {
 		LocationID: getPtr("my-loc"),
 	}
 
-	err := CreateItem(mockRepo, params)
+	err := CreateItem(mockRepo, validate, params)
 	if err != nil {
 		t.Errorf("Got error: %s", err)
 	}
@@ -38,6 +41,7 @@ func TestCreateItem(t *testing.T) {
 func TestUpdateItem(t *testing.T) {
 	t.Parallel()
 
+	validate := validator.New(validator.WithRequiredStructEnabled())
 	mockRepo := &MockRepo{}
 	id := "cheese"
 	params := WriteItemParams{
@@ -51,7 +55,7 @@ func TestUpdateItem(t *testing.T) {
 		LocationID: getPtr("my-loc"),
 	}
 
-	err := UpdateItem(mockRepo, id, params)
+	err := UpdateItem(mockRepo, validate, id, params)
 	if err != nil {
 		t.Errorf("Got error: %s", err)
 	}
@@ -66,40 +70,6 @@ func TestUpdateItem(t *testing.T) {
 
 	if !reflect.DeepEqual(mockRepo.UpdateItemParams, params) {
 		t.Errorf("Got params %+v instead of %+v", mockRepo.UpdateItemParams, params)
-	}
-}
-
-func TestUpdateItemQuantity(t *testing.T) {
-	t.Parallel()
-
-	data := []struct {
-		id       string
-		quantity *int
-	}{
-		{id: "potato", quantity: getPtr(8)},
-		{id: "mayo", quantity: nil},
-		{id: "strawberry", quantity: getPtr(21)},
-		{id: "chocolate", quantity: getPtr(0)},
-	}
-
-	for _, row := range data {
-		mockRepo := &MockRepo{}
-
-		err := UpdateItemQuantity(mockRepo, row.id, row.quantity)
-		if err != nil {
-			t.Errorf("Got error: %s", err)
-		}
-
-		if mockRepo.UpdateItemQuantityID != row.id {
-			t.Errorf("Called with ID %s instead of %s", mockRepo.UpdateItemQuantityID, row.id)
-		}
-
-		if mockRepo.UpdateItemQuantityValue != row.quantity {
-			t.Errorf(
-				"Called with quantity %v instead of %v",
-				mockRepo.UpdateItemQuantityValue, row.quantity,
-			)
-		}
 	}
 }
 

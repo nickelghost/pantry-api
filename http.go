@@ -31,9 +31,8 @@ func GetRouter(repo Repo, validate *validator.Validate) http.Handler {
 	mux.HandleFunc("POST /locations", CreateLocationHandler(repo, validate))
 	mux.HandleFunc("PUT /locations/{id}", UpdateLocationHandler(repo, validate))
 	mux.HandleFunc("DELETE /locations/{id}", DeleteLocationHandler(repo))
-	mux.HandleFunc("POST /items", CreateItemHandler(repo))
-	mux.HandleFunc("PUT /items/{id}", UpdateItemHandler(repo))
-	mux.HandleFunc("PATCH /items/{id}/quantity", UpdateItemQuantityHandler(repo))
+	mux.HandleFunc("POST /items", CreateItemHandler(repo, validate))
+	mux.HandleFunc("PUT /items/{id}", UpdateItemHandler(repo, validate))
 	mux.HandleFunc("PATCH /items/{id}/location", UpdateItemLocationHandler(repo))
 	mux.HandleFunc("DELETE /items/{id}", DeleteItemHandler(repo))
 
@@ -210,7 +209,7 @@ func DeleteLocationHandler(repo Repo) http.HandlerFunc {
 	}
 }
 
-func CreateItemHandler(repo Repo) http.HandlerFunc {
+func CreateItemHandler(repo Repo, validate *validator.Validate) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var body WriteItemParams
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -220,7 +219,7 @@ func CreateItemHandler(repo Repo) http.HandlerFunc {
 			return
 		}
 
-		if err := CreateItem(repo, body); err != nil {
+		if err := CreateItem(repo, validate, body); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Println(err)
 
@@ -231,7 +230,7 @@ func CreateItemHandler(repo Repo) http.HandlerFunc {
 	}
 }
 
-func UpdateItemHandler(repo Repo) http.HandlerFunc {
+func UpdateItemHandler(repo Repo, validate *validator.Validate) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
@@ -243,32 +242,7 @@ func UpdateItemHandler(repo Repo) http.HandlerFunc {
 			return
 		}
 
-		if err := UpdateItem(repo, id, body); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			log.Println(err)
-
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-	}
-}
-
-func UpdateItemQuantityHandler(repo Repo) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-
-		body := struct {
-			Quantity *int `json:"quantity"`
-		}{}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			log.Println(err)
-
-			return
-		}
-
-		if err := UpdateItemQuantity(repo, id, body.Quantity); err != nil {
+		if err := UpdateItem(repo, validate, id, body); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Println(err)
 
