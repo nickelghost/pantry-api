@@ -3,16 +3,21 @@ package main
 import (
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
 
 func TestGetLocationsParams(t *testing.T) {
+	t.Parallel()
+
 	search := getPtr("oran")
 	tags := getPtr([]string{"fruit", "sweet"})
 
 	mockRepo := &MockRepo{}
+
 	_, _, err := GetLocations(mockRepo, search, tags)
 	if err != nil {
 		t.Errorf("Got error: %+v", err)
@@ -40,6 +45,8 @@ func TestGetLocationsParams(t *testing.T) {
 }
 
 func TestGetLocationsRes(t *testing.T) {
+	t.Parallel()
+
 	locations := []Location{
 		{ID: "pantry", Name: "Pantry"},
 		{ID: "fridge", Name: "Fridge"},
@@ -89,29 +96,36 @@ func TestGetLocationsRes(t *testing.T) {
 }
 
 func TestGetLocationsErrs(t *testing.T) {
+	t.Parallel()
+
 	errScenarios := []struct {
-		repo *MockRepo
-		err  error
+		repo   *MockRepo
+		errStr string
 	}{
 		{
-			repo: &MockRepo{GetLocationsErr: errors.New("get locations failed")},
-			err:  errors.New("get locations failed"),
+			//nolint:goerr113
+			repo:   &MockRepo{GetLocationsErr: errors.New("get locations failed")},
+			errStr: "get locations failed",
 		},
 		{
-			repo: &MockRepo{GetItemsErr: errors.New("get items failed")},
-			err:  errors.New("get items failed"),
+			//nolint:goerr113
+			repo:   &MockRepo{GetItemsErr: errors.New("get items failed")},
+			errStr: "get items failed",
 		},
 	}
 
 	for _, s := range errScenarios {
 		_, _, err := GetLocations(s.repo, nil, nil)
-		if err.Error() != s.err.Error() {
-			t.Errorf("Expected %v but got %v", s.err, err)
+		if !strings.Contains(err.Error(), s.errStr) {
+			t.Errorf(`Expected "%s" to contain "%s"`, err, s.errStr)
 		}
 	}
 }
 
+//nolint:cyclop
 func TestGetLocation(t *testing.T) {
+	t.Parallel()
+
 	location := Location{ID: "freezer", Name: "Freezer"}
 	mockRepo := &MockRepo{
 		GetLocationsRes: []Location{location},
@@ -162,29 +176,36 @@ func TestGetLocation(t *testing.T) {
 }
 
 func TestLocationErrs(t *testing.T) {
+	t.Parallel()
+
 	errScenarios := []struct {
-		repo *MockRepo
-		err  error
+		repo   *MockRepo
+		errStr string
 	}{
 		{
-			repo: &MockRepo{},
-			err:  errors.New("not found"),
+			repo:   &MockRepo{},
+			errStr: "location not found",
 		},
 		{
-			repo: &MockRepo{GetLocationsErr: errors.New("get locations failed")},
-			err:  errors.New("get locations failed"),
+			//nolint:goerr113
+			repo:   &MockRepo{GetLocationsErr: errors.New("get locations failed")},
+			errStr: "get locations failed",
 		},
 	}
 
 	for _, s := range errScenarios {
 		_, err := GetLocation(s.repo, uuid.NewString(), nil, nil)
-		if err.Error() != s.err.Error() {
-			t.Errorf("Expected %v but got %v", s.err, err)
+		if !strings.Contains(err.Error(), s.errStr) {
+			t.Errorf(`Expected "%s" to contain "%s"`, err, s.errStr)
 		}
 	}
 }
 
 func TestCreateLocation(t *testing.T) {
+	t.Parallel()
+
+	validate := validator.New(validator.WithRequiredStructEnabled())
+
 	correctNames := []string{
 		"Fridge",
 		"Childrens' Pantry",
@@ -194,7 +215,8 @@ func TestCreateLocation(t *testing.T) {
 
 	for _, cn := range correctNames {
 		repo := &MockRepo{}
-		err := CreateLocation(repo, cn)
+
+		err := CreateLocation(repo, validate, cn)
 		if err != nil {
 			t.Errorf("Returned unexpected error for %s: %+v", cn, err)
 		}
@@ -220,7 +242,7 @@ func TestCreateLocation(t *testing.T) {
 
 	for _, in := range incorrectNames {
 		repo := &MockRepo{}
-		err := CreateLocation(repo, in)
+		err := CreateLocation(repo, validate, in)
 
 		if err == nil {
 			t.Errorf("Did not return error on %s", in)
@@ -233,6 +255,10 @@ func TestCreateLocation(t *testing.T) {
 }
 
 func TestUpdateLocation(t *testing.T) {
+	t.Parallel()
+
+	validate := validator.New(validator.WithRequiredStructEnabled())
+
 	correctNames := []string{
 		"Childrens' Pantry",
 		"@ the top of the shelf",
@@ -242,7 +268,8 @@ func TestUpdateLocation(t *testing.T) {
 	for _, cn := range correctNames {
 		repo := &MockRepo{}
 		id := uuid.New().String()
-		err := UpdateLocation(repo, id, cn)
+
+		err := UpdateLocation(repo, validate, id, cn)
 		if err != nil {
 			t.Errorf("Returned unexpected error for %s: %+v", cn, err)
 		}
@@ -272,7 +299,7 @@ func TestUpdateLocation(t *testing.T) {
 
 	for _, in := range incorrectNames {
 		repo := &MockRepo{}
-		err := UpdateLocation(repo, "id", in)
+		err := UpdateLocation(repo, validate, "id", in)
 
 		if err == nil {
 			t.Errorf("Did not return error on %s", in)
@@ -285,10 +312,13 @@ func TestUpdateLocation(t *testing.T) {
 }
 
 func TestDeleteLocation(t *testing.T) {
+	t.Parallel()
+
 	ids := []string{"id1", "id2", "007"}
 
 	for _, id := range ids {
 		repo := &MockRepo{}
+
 		err := DeleteLocation(repo, id)
 		if err != nil {
 			t.Errorf("Returned unexpected error for %s: %+v", id, err)

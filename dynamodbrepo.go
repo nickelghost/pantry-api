@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -23,7 +24,7 @@ func dynamoToLocations(dynamoItems []map[string]*dynamodb.AttributeValue) ([]Loc
 		loc := Location{}
 
 		if err := dynamodbattribute.UnmarshalMap(i, &loc); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unmarshal location: %w", err)
 		}
 
 		locations = append(locations, loc)
@@ -39,7 +40,7 @@ func dynamoToItems(dynamoItems []map[string]*dynamodb.AttributeValue) ([]Item, e
 		item := Item{}
 
 		if err := dynamodbattribute.UnmarshalMap(i, &item); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unmarshal item: %w", err)
 		}
 
 		items = append(items, item)
@@ -53,7 +54,7 @@ func (repo DynamoDBRepo) scanGetLocations() ([]Location, error) {
 		TableName: &repo.locationsTable,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("scan locations: %w", err)
 	}
 
 	return dynamoToLocations(output.Items)
@@ -65,7 +66,7 @@ func (repo DynamoDBRepo) batchGetLocations(ids []string) ([]Location, error) {
 	for _, id := range ids {
 		keys = append(keys, map[string]*dynamodb.AttributeValue{
 			"id": {
-				S: &id,
+				S: aws.String(id),
 			},
 		})
 	}
@@ -78,7 +79,7 @@ func (repo DynamoDBRepo) batchGetLocations(ids []string) ([]Location, error) {
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dynamodb batch get locations: %w", err)
 	}
 
 	return dynamoToLocations(output.Responses[repo.locationsTable])
@@ -87,9 +88,9 @@ func (repo DynamoDBRepo) batchGetLocations(ids []string) ([]Location, error) {
 func (repo DynamoDBRepo) GetLocations(ids *[]string) ([]Location, error) {
 	if ids != nil {
 		return repo.batchGetLocations(*ids)
-	} else {
-		return repo.scanGetLocations()
 	}
+
+	return repo.scanGetLocations()
 }
 
 func (repo DynamoDBRepo) CreateLocation(name string) error {
@@ -100,15 +101,18 @@ func (repo DynamoDBRepo) CreateLocation(name string) error {
 
 	dynamoLoc, err := dynamodbattribute.MarshalMap(loc)
 	if err != nil {
-		return err
+		return fmt.Errorf("marshal location create params: %w", err)
 	}
 
 	_, err = repo.client.PutItem(&dynamodb.PutItemInput{
 		TableName: &repo.locationsTable,
 		Item:      dynamoLoc,
 	})
+	if err != nil {
+		return fmt.Errorf("dynamodb create location: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func (repo DynamoDBRepo) UpdateLocation(id string, name string) error {
@@ -129,8 +133,11 @@ func (repo DynamoDBRepo) UpdateLocation(id string, name string) error {
 		},
 		UpdateExpression: aws.String(`set #name = :name`),
 	})
+	if err != nil {
+		return fmt.Errorf("dynamodb update location in: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func (repo DynamoDBRepo) DeleteLocation(id string) error {
@@ -146,7 +153,7 @@ func (repo DynamoDBRepo) DeleteLocation(id string) error {
 				TableName: &repo.itemsTable,
 				Key: map[string]*dynamodb.AttributeValue{
 					"id": {
-						S: &item.ID,
+						S: aws.String(item.ID),
 					},
 				},
 				ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
@@ -171,8 +178,11 @@ func (repo DynamoDBRepo) DeleteLocation(id string) error {
 			},
 		}),
 	})
+	if err != nil {
+		return fmt.Errorf("dynamodb transaction write: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func (repo DynamoDBRepo) GetItems(
@@ -205,6 +215,7 @@ func (repo DynamoDBRepo) GetItems(
 	scanInput := dynamodb.ScanInput{
 		TableName: &repo.itemsTable,
 	}
+
 	if len(conditions) > 0 {
 		fltr := conditions[0]
 
@@ -214,7 +225,7 @@ func (repo DynamoDBRepo) GetItems(
 
 		expr, err := expression.NewBuilder().WithFilter(fltr).Build()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("build items filter: %w", err)
 		}
 
 		scanInput.ExpressionAttributeNames = expr.Names()
@@ -224,7 +235,7 @@ func (repo DynamoDBRepo) GetItems(
 
 	res, err := repo.client.Scan(&scanInput)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("scan item: %w", err)
 	}
 
 	return dynamoToItems(res.Items)
@@ -258,21 +269,24 @@ func (repo DynamoDBRepo) CreateItem(params WriteItemParams) error {
 
 	dynamoItem, err := dynamodbattribute.MarshalMap(i)
 	if err != nil {
-		return err
+		return fmt.Errorf("marshal write item params: %w", err)
 	}
 
 	_, err = repo.client.PutItem(&dynamodb.PutItemInput{
 		TableName: &repo.itemsTable,
 		Item:      dynamoItem,
 	})
+	if err != nil {
+		return fmt.Errorf("dynamodb create item: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func (repo DynamoDBRepo) UpdateItem(id string, params WriteItemParams) error {
 	attrs, err := dynamodbattribute.MarshalMap(DynamoDBWriteItemParams(params))
 	if err != nil {
-		return err
+		return fmt.Errorf("marshal write item params: %w", err)
 	}
 
 	_, err = repo.client.UpdateItem(&dynamodb.UpdateItemInput{
@@ -301,8 +315,11 @@ func (repo DynamoDBRepo) UpdateItem(id string, params WriteItemParams) error {
 			locationId = :locationId
 		`),
 	})
+	if err != nil {
+		return fmt.Errorf("dynamodb update item: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func (repo DynamoDBRepo) UpdateItemQuantity(id string, quantity *int) error {
@@ -312,7 +329,7 @@ func (repo DynamoDBRepo) UpdateItemQuantity(id string, quantity *int) error {
 		Quantity: quantity,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("update fields marshal: %w", err)
 	}
 
 	_, err = repo.client.UpdateItem(&dynamodb.UpdateItemInput{
@@ -325,8 +342,11 @@ func (repo DynamoDBRepo) UpdateItemQuantity(id string, quantity *int) error {
 		ExpressionAttributeValues: attrs,
 		UpdateExpression:          aws.String(`set quantity = :quantity`),
 	})
+	if err != nil {
+		return fmt.Errorf("dynamodb update item: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func (repo DynamoDBRepo) UpdateItemLocation(id string, locationID *string) error {
@@ -336,7 +356,7 @@ func (repo DynamoDBRepo) UpdateItemLocation(id string, locationID *string) error
 		LocationID: locationID,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("update fields marshal: %w", err)
 	}
 
 	_, err = repo.client.UpdateItem(&dynamodb.UpdateItemInput{
@@ -349,8 +369,11 @@ func (repo DynamoDBRepo) UpdateItemLocation(id string, locationID *string) error
 		ExpressionAttributeValues: attrs,
 		UpdateExpression:          aws.String(`set locationId = :locationId`),
 	})
+	if err != nil {
+		return fmt.Errorf("dynamodb update item: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func (repo DynamoDBRepo) DeleteItem(id string) error {
@@ -362,6 +385,9 @@ func (repo DynamoDBRepo) DeleteItem(id string) error {
 			},
 		},
 	})
+	if err != nil {
+		return fmt.Errorf("dynamodb delete item: %w", err)
+	}
 
-	return err
+	return nil
 }

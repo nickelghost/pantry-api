@@ -1,8 +1,8 @@
 package main
 
 import (
+	"errors"
 	"log"
-	"net"
 	"net/http"
 	"os"
 
@@ -13,10 +13,8 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-var validate *validator.Validate
-
 func main() {
-	validate = validator.New(validator.WithRequiredStructEnabled())
+	validate := validator.New(validator.WithRequiredStructEnabled())
 
 	sess := session.Must(session.NewSession())
 	client := dynamodb.New(sess)
@@ -27,17 +25,13 @@ func main() {
 		itemsTable:     os.Getenv("DYNAMODB_ITEMS_TABLE"),
 	}
 
-	handler := GetRouter(repo)
+	handler := GetRouter(repo, validate)
 
 	if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") != "" {
 		lambda.Start(httpadapter.NewV2(handler).ProxyWithContext)
 	} else {
-		srv := &http.Server{
-			Addr:    net.JoinHostPort("0.0.0.0", "8080"),
-			Handler: handler,
-		}
-
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		srv := GetServer(handler)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}

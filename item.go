@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Item struct {
 	ID             string     `json:"id"`
@@ -31,25 +34,41 @@ type WriteItemParams struct {
 }
 
 func CreateItem(repo Repo, params WriteItemParams) error {
-	// todo: add validation
-	return repo.CreateItem(params)
+	if err := repo.CreateItem(params); err != nil {
+		return fmt.Errorf("create item: %w", err)
+	}
+
+	return nil
 }
 
 func UpdateItem(repo Repo, id string, params WriteItemParams) error {
-	// todo: add validation
-	return repo.UpdateItem(id, params)
+	if err := repo.UpdateItem(id, params); err != nil {
+		return fmt.Errorf("update item: %w", err)
+	}
+
+	return nil
 }
 
 func UpdateItemQuantity(repo Repo, id string, quantity *int) error {
-	// todo: add validation
-	return repo.UpdateItemQuantity(id, quantity)
+	if err := repo.UpdateItemQuantity(id, quantity); err != nil {
+		return fmt.Errorf("update item quantity: %w", err)
+	}
+
+	return nil
 }
 
 func UpdateItemLocation(repo Repo, id string, locationID *string) error {
-	// todo: add validation
-	return repo.UpdateItemLocation(id, locationID)
+	if err := repo.UpdateItemLocation(id, locationID); err != nil {
+		return fmt.Errorf("update item location: %w", err)
+	}
+
+	return nil
 }
 
 func DeleteItem(repo Repo, id string) error {
-	return repo.DeleteItem(id)
+	if err := repo.DeleteItem(id); err != nil {
+		return fmt.Errorf("delete item: %w", err)
+	}
+
+	return nil
 }

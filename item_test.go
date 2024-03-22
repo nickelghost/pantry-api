@@ -7,6 +7,8 @@ import (
 )
 
 func TestCreateItem(t *testing.T) {
+	t.Parallel()
+
 	mockRepo := &MockRepo{}
 	params := WriteItemParams{
 		Name:       "Cheese",
@@ -34,6 +36,8 @@ func TestCreateItem(t *testing.T) {
 }
 
 func TestUpdateItem(t *testing.T) {
+	t.Parallel()
+
 	mockRepo := &MockRepo{}
 	id := "cheese"
 	params := WriteItemParams{
@@ -66,6 +70,8 @@ func TestUpdateItem(t *testing.T) {
 }
 
 func TestUpdateItemQuantity(t *testing.T) {
+	t.Parallel()
+
 	data := []struct {
 		id       string
 		quantity *int
@@ -78,6 +84,7 @@ func TestUpdateItemQuantity(t *testing.T) {
 
 	for _, row := range data {
 		mockRepo := &MockRepo{}
+
 		err := UpdateItemQuantity(mockRepo, row.id, row.quantity)
 		if err != nil {
 			t.Errorf("Got error: %s", err)
@@ -97,6 +104,8 @@ func TestUpdateItemQuantity(t *testing.T) {
 }
 
 func TestUpdateItemLocation(t *testing.T) {
+	t.Parallel()
+
 	data := []struct {
 		id         string
 		locationID *string
@@ -109,6 +118,7 @@ func TestUpdateItemLocation(t *testing.T) {
 
 	for _, row := range data {
 		mockRepo := &MockRepo{}
+
 		err := UpdateItemLocation(mockRepo, row.id, row.locationID)
 		if err != nil {
 			t.Errorf("Got error: %s", err)
@@ -128,10 +138,13 @@ func TestUpdateItemLocation(t *testing.T) {
 }
 
 func TestDeleteItem(t *testing.T) {
+	t.Parallel()
+
 	ids := []string{"id1", "id2", "007"}
 
 	for _, id := range ids {
 		repo := &MockRepo{}
+
 		err := DeleteItem(repo, id)
 		if err != nil {
 			t.Errorf("Returned unexpected error for %s: %+v", id, err)

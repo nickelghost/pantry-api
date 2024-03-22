@@ -43,21 +43,21 @@ type MockRepo struct {
 }
 
 func (repo *MockRepo) GetLocations(ids *[]string) ([]Location, error) {
-	repo.GetLocationsCalls += 1
+	repo.GetLocationsCalls++
 	repo.GetLocationsIDs = ids
 
 	return repo.GetLocationsRes, repo.GetLocationsErr
 }
 
 func (repo *MockRepo) CreateLocation(name string) error {
-	repo.CreateLocationCalls += 1
+	repo.CreateLocationCalls++
 	repo.CreateLocationName = name
 
 	return nil
 }
 
 func (repo *MockRepo) UpdateLocation(id string, name string) error {
-	repo.UpdateLocationCalls += 1
+	repo.UpdateLocationCalls++
 	repo.UpdateLocationID = id
 	repo.UpdateLocationName = name
 
@@ -65,7 +65,7 @@ func (repo *MockRepo) UpdateLocation(id string, name string) error {
 }
 
 func (repo *MockRepo) DeleteLocation(id string) error {
-	repo.DeleteLocationCalls += 1
+	repo.DeleteLocationCalls++
 	repo.DeleteLocationID = id
 
 	return nil
@@ -76,7 +76,7 @@ func (repo *MockRepo) GetItems(
 	tags *[]string,
 	locationIDs *[]string,
 ) ([]Item, error) {
-	repo.GetItemsCalls += 1
+	repo.GetItemsCalls++
 	repo.GetItemsSearch = search
 	repo.GetItemsTags = tags
 	repo.GetItemsLocationIDs = locationIDs
@@ -85,14 +85,14 @@ func (repo *MockRepo) GetItems(
 }
 
 func (repo *MockRepo) CreateItem(params WriteItemParams) error {
-	repo.CreateItemCalls += 1
+	repo.CreateItemCalls++
 	repo.CreateItemParams = params
 
 	return nil
 }
 
 func (repo *MockRepo) UpdateItem(id string, params WriteItemParams) error {
-	repo.UpdateItemCalls += 1
+	repo.UpdateItemCalls++
 	repo.UpdateItemID = id
 	repo.UpdateItemParams = params
 
@@ -100,7 +100,7 @@ func (repo *MockRepo) UpdateItem(id string, params WriteItemParams) error {
 }
 
 func (repo *MockRepo) UpdateItemQuantity(id string, quantity *int) error {
-	repo.UpdateItemQuantityCalls += 1
+	repo.UpdateItemQuantityCalls++
 	repo.UpdateItemQuantityID = id
 	repo.UpdateItemQuantityValue = quantity
 
@@ -108,7 +108,7 @@ func (repo *MockRepo) UpdateItemQuantity(id string, quantity *int) error {
 }
 
 func (repo *MockRepo) UpdateItemLocation(id string, locationID *string) error {
-	repo.UpdateItemLocationCalls += 1
+	repo.UpdateItemLocationCalls++
 	repo.UpdateItemLocationID = id
 	repo.UpdateItemLocationValue = locationID
 
@@ -116,7 +116,7 @@ func (repo *MockRepo) UpdateItemLocation(id string, locationID *string) error {
 }
 
 func (repo *MockRepo) DeleteItem(id string) error {
-	repo.DeleteItemCalls += 1
+	repo.DeleteItemCalls++
 	repo.DeleteItemID = id
 
 	return nil
