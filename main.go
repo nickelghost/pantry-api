@@ -14,6 +14,8 @@ import (
 )
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, nil)))
+
 	validate := validator.New(validator.WithRequiredStructEnabled())
 
 	sess := session.Must(session.NewSession())
