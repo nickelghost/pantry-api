@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net"
 	"net/http"
@@ -121,7 +122,11 @@ func GetLocationHandler(repo Repo) http.HandlerFunc {
 		}
 
 		loc, err := GetLocation(repo, id, search, tags)
-		if err != nil {
+		if errors.Is(err, ErrLocationNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+
+			return
+		} else if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Println(err)
 
