@@ -1,9 +1,9 @@
 package main
 
-type MockRepo struct {
+type mockRepository struct {
 	GetLocationsCalls int
 	GetLocationsIDs   *[]string
-	GetLocationsRes   []Location
+	GetLocationsRes   []location
 	GetLocationsErr   error
 
 	CreateLocationCalls int
@@ -20,15 +20,15 @@ type MockRepo struct {
 	GetItemsSearch      *string
 	GetItemsTags        *[]string
 	GetItemsLocationIDs *[]string
-	GetItemsRes         []Item
+	GetItemsRes         []item
 	GetItemsErr         error
 
 	CreateItemCalls  int
-	CreateItemParams WriteItemParams
+	CreateItemParams writeItemParams
 
 	UpdateItemCalls  int
 	UpdateItemID     string
-	UpdateItemParams WriteItemParams
+	UpdateItemParams writeItemParams
 
 	UpdateItemQuantityCalls int
 	UpdateItemQuantityID    string
@@ -42,21 +42,21 @@ type MockRepo struct {
 	DeleteItemID    string
 }
 
-func (repo *MockRepo) GetLocations(ids *[]string) ([]Location, error) {
+func (repo *mockRepository) GetLocations(ids *[]string) ([]location, error) {
 	repo.GetLocationsCalls++
 	repo.GetLocationsIDs = ids
 
 	return repo.GetLocationsRes, repo.GetLocationsErr
 }
 
-func (repo *MockRepo) CreateLocation(name string) error {
+func (repo *mockRepository) CreateLocation(name string) error {
 	repo.CreateLocationCalls++
 	repo.CreateLocationName = name
 
 	return nil
 }
 
-func (repo *MockRepo) UpdateLocation(id string, name string) error {
+func (repo *mockRepository) UpdateLocation(id string, name string) error {
 	repo.UpdateLocationCalls++
 	repo.UpdateLocationID = id
 	repo.UpdateLocationName = name
@@ -64,18 +64,18 @@ func (repo *MockRepo) UpdateLocation(id string, name string) error {
 	return nil
 }
 
-func (repo *MockRepo) DeleteLocation(id string) error {
+func (repo *mockRepository) DeleteLocation(id string) error {
 	repo.DeleteLocationCalls++
 	repo.DeleteLocationID = id
 
 	return nil
 }
 
-func (repo *MockRepo) GetItems(
+func (repo *mockRepository) GetItems(
 	search *string,
 	tags *[]string,
 	locationIDs *[]string,
-) ([]Item, error) {
+) ([]item, error) {
 	repo.GetItemsCalls++
 	repo.GetItemsSearch = search
 	repo.GetItemsTags = tags
@@ -84,14 +84,14 @@ func (repo *MockRepo) GetItems(
 	return repo.GetItemsRes, repo.GetItemsErr
 }
 
-func (repo *MockRepo) CreateItem(params WriteItemParams) error {
+func (repo *mockRepository) CreateItem(params writeItemParams) error {
 	repo.CreateItemCalls++
 	repo.CreateItemParams = params
 
 	return nil
 }
 
-func (repo *MockRepo) UpdateItem(id string, params WriteItemParams) error {
+func (repo *mockRepository) UpdateItem(id string, params writeItemParams) error {
 	repo.UpdateItemCalls++
 	repo.UpdateItemID = id
 	repo.UpdateItemParams = params
@@ -99,7 +99,7 @@ func (repo *MockRepo) UpdateItem(id string, params WriteItemParams) error {
 	return nil
 }
 
-func (repo *MockRepo) UpdateItemLocation(id string, locationID *string) error {
+func (repo *mockRepository) UpdateItemLocation(id string, locationID *string) error {
 	repo.UpdateItemLocationCalls++
 	repo.UpdateItemLocationID = id
 	repo.UpdateItemLocationValue = locationID
@@ -107,7 +107,7 @@ func (repo *MockRepo) UpdateItemLocation(id string, locationID *string) error {
 	return nil
 }
 
-func (repo *MockRepo) DeleteItem(id string) error {
+func (repo *mockRepository) DeleteItem(id string) error {
 	repo.DeleteItemCalls++
 	repo.DeleteItemID = id
 

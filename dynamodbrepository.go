@@ -11,17 +11,17 @@ import (
 	"github.com/google/uuid"
 )
 
-type DynamoDBRepo struct {
+type dynamoDBRepository struct {
 	client         *dynamodb.DynamoDB
 	locationsTable string
 	itemsTable     string
 }
 
-func dynamoToLocations(dynamoItems []map[string]*dynamodb.AttributeValue) ([]Location, error) {
-	locations := []Location{}
+func dynamoToLocations(dynamoItems []map[string]*dynamodb.AttributeValue) ([]location, error) {
+	locations := []location{}
 
 	for _, i := range dynamoItems {
-		loc := Location{}
+		loc := location{}
 
 		if err := dynamodbattribute.UnmarshalMap(i, &loc); err != nil {
 			return nil, fmt.Errorf("unmarshal location: %w", err)
@@ -33,23 +33,23 @@ func dynamoToLocations(dynamoItems []map[string]*dynamodb.AttributeValue) ([]Loc
 	return locations, nil
 }
 
-func dynamoToItems(dynamoItems []map[string]*dynamodb.AttributeValue) ([]Item, error) {
-	items := []Item{}
+func dynamoToItems(dynamoItems []map[string]*dynamodb.AttributeValue) ([]item, error) {
+	items := []item{}
 
-	for _, i := range dynamoItems {
-		item := Item{}
+	for _, di := range dynamoItems {
+		i := item{}
 
-		if err := dynamodbattribute.UnmarshalMap(i, &item); err != nil {
+		if err := dynamodbattribute.UnmarshalMap(di, &i); err != nil {
 			return nil, fmt.Errorf("unmarshal item: %w", err)
 		}
 
-		items = append(items, item)
+		items = append(items, i)
 	}
 
 	return items, nil
 }
 
-func (repo DynamoDBRepo) scanGetLocations() ([]Location, error) {
+func (repo dynamoDBRepository) scanGetLocations() ([]location, error) {
 	output, err := repo.client.Scan(&dynamodb.ScanInput{
 		TableName: &repo.locationsTable,
 	})
@@ -60,7 +60,7 @@ func (repo DynamoDBRepo) scanGetLocations() ([]Location, error) {
 	return dynamoToLocations(output.Items)
 }
 
-func (repo DynamoDBRepo) batchGetLocations(ids []string) ([]Location, error) {
+func (repo dynamoDBRepository) batchGetLocations(ids []string) ([]location, error) {
 	keys := []map[string]*dynamodb.AttributeValue{}
 
 	for _, id := range ids {
@@ -85,7 +85,7 @@ func (repo DynamoDBRepo) batchGetLocations(ids []string) ([]Location, error) {
 	return dynamoToLocations(output.Responses[repo.locationsTable])
 }
 
-func (repo DynamoDBRepo) GetLocations(ids *[]string) ([]Location, error) {
+func (repo dynamoDBRepository) GetLocations(ids *[]string) ([]location, error) {
 	if ids != nil {
 		return repo.batchGetLocations(*ids)
 	}
@@ -93,8 +93,8 @@ func (repo DynamoDBRepo) GetLocations(ids *[]string) ([]Location, error) {
 	return repo.scanGetLocations()
 }
 
-func (repo DynamoDBRepo) CreateLocation(name string) error {
-	loc := Location{
+func (repo dynamoDBRepository) CreateLocation(name string) error {
+	loc := location{
 		ID:   uuid.NewString(),
 		Name: name,
 	}
@@ -115,7 +115,7 @@ func (repo DynamoDBRepo) CreateLocation(name string) error {
 	return nil
 }
 
-func (repo DynamoDBRepo) UpdateLocation(id string, name string) error {
+func (repo dynamoDBRepository) UpdateLocation(id string, name string) error {
 	_, err := repo.client.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: &repo.locationsTable,
 		Key: map[string]*dynamodb.AttributeValue{
@@ -140,20 +140,20 @@ func (repo DynamoDBRepo) UpdateLocation(id string, name string) error {
 	return nil
 }
 
-func (repo DynamoDBRepo) DeleteLocation(id string) error {
+func (repo dynamoDBRepository) DeleteLocation(id string) error {
 	items, err := repo.GetItems(nil, nil, &[]string{id})
 	if err != nil {
 		return err
 	}
 
 	updates := []*dynamodb.TransactWriteItem{}
-	for _, item := range items {
+	for _, i := range items {
 		updates = append(updates, &dynamodb.TransactWriteItem{
 			Update: &dynamodb.Update{
 				TableName: &repo.itemsTable,
 				Key: map[string]*dynamodb.AttributeValue{
 					"id": {
-						S: aws.String(item.ID),
+						S: aws.String(i.ID),
 					},
 				},
 				ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
@@ -185,11 +185,11 @@ func (repo DynamoDBRepo) DeleteLocation(id string) error {
 	return nil
 }
 
-func (repo DynamoDBRepo) GetItems(
+func (repo dynamoDBRepository) GetItems(
 	search *string,
 	tags *[]string,
 	locationIDs *[]string,
-) ([]Item, error) {
+) ([]item, error) {
 	conditions := []expression.ConditionBuilder{}
 
 	if search != nil {
@@ -241,7 +241,7 @@ func (repo DynamoDBRepo) GetItems(
 	return dynamoToItems(res.Items)
 }
 
-type DynamoDBWriteItemParams struct {
+type dynamoDBWriteItemParams struct {
 	Name       string     `json:":name"`
 	Type       *string    `json:":type"`
 	Tags       []string   `json:":tags"`
@@ -253,8 +253,8 @@ type DynamoDBWriteItemParams struct {
 	LocationID *string    `json:":locationId"`
 }
 
-func (repo DynamoDBRepo) CreateItem(params WriteItemParams) error {
-	i := Item{
+func (repo dynamoDBRepository) CreateItem(params writeItemParams) error {
+	i := item{
 		ID:         uuid.NewString(),
 		Name:       params.Name,
 		Type:       params.Type,
@@ -283,8 +283,8 @@ func (repo DynamoDBRepo) CreateItem(params WriteItemParams) error {
 	return nil
 }
 
-func (repo DynamoDBRepo) UpdateItem(id string, params WriteItemParams) error {
-	attrs, err := dynamodbattribute.MarshalMap(DynamoDBWriteItemParams(params))
+func (repo dynamoDBRepository) UpdateItem(id string, params writeItemParams) error {
+	attrs, err := dynamodbattribute.MarshalMap(dynamoDBWriteItemParams(params))
 	if err != nil {
 		return fmt.Errorf("marshal write item params: %w", err)
 	}
@@ -320,7 +320,7 @@ func (repo DynamoDBRepo) UpdateItem(id string, params WriteItemParams) error {
 	return nil
 }
 
-func (repo DynamoDBRepo) UpdateItemLocation(id string, locationID *string) error {
+func (repo dynamoDBRepository) UpdateItemLocation(id string, locationID *string) error {
 	attrs, err := dynamodbattribute.MarshalMap(struct {
 		LocationID *string `json:":locationId"`
 	}{
@@ -347,7 +347,7 @@ func (repo DynamoDBRepo) UpdateItemLocation(id string, locationID *string) error
 	return nil
 }
 
-func (repo DynamoDBRepo) DeleteItem(id string) error {
+func (repo dynamoDBRepository) DeleteItem(id string) error {
 	_, err := repo.client.DeleteItem(&dynamodb.DeleteItemInput{
 		TableName: aws.String(repo.itemsTable),
 		Key: map[string]*dynamodb.AttributeValue{

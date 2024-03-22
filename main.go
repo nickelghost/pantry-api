@@ -21,18 +21,18 @@ func main() {
 	sess := session.Must(session.NewSession())
 	client := dynamodb.New(sess)
 
-	repo := DynamoDBRepo{
+	repo := dynamoDBRepository{
 		client:         client,
 		locationsTable: os.Getenv("DYNAMODB_LOCATIONS_TABLE"),
 		itemsTable:     os.Getenv("DYNAMODB_ITEMS_TABLE"),
 	}
 
-	handler := GetRouter(repo, validate)
+	handler := getRouter(repo, validate)
 
 	if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") != "" {
 		lambda.Start(httpadapter.NewV2(handler).ProxyWithContext)
 	} else {
-		srv := GetServer(handler)
+		srv := getServer(handler)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("failed to start server", "err", err)
 		}

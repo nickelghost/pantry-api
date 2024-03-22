@@ -7,30 +7,30 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type Location struct {
+type location struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
-	Items []Item `json:"items,omitempty"`
+	Items []item `json:"items,omitempty"`
 }
 
-func (Location) GetNameConstraints() string {
+func (location) GetNameConstraints() string {
 	return "required,min=1,max=50"
 }
 
-func fillLocations(locations []Location, items []Item) ([]Location, []Item) {
-	remainingItems := []Item{}
+func fillLocations(locations []location, items []item) ([]location, []item) {
+	remainingItems := []item{}
 
-	for _, item := range items {
-		if item.LocationID == nil {
-			remainingItems = append(remainingItems, item)
+	for _, i := range items {
+		if i.LocationID == nil {
+			remainingItems = append(remainingItems, i)
 
 			continue
 		}
 
 		for li, loc := range locations {
-			if loc.ID == *item.LocationID {
+			if loc.ID == *i.LocationID {
 				// add item to the location
-				locations[li].Items = append(locations[li].Items, item)
+				locations[li].Items = append(locations[li].Items, i)
 			}
 		}
 	}
@@ -38,7 +38,7 @@ func fillLocations(locations []Location, items []Item) ([]Location, []Item) {
 	return locations, remainingItems
 }
 
-func getLocations(repo Repo, ids *[]string, search *string, tags *[]string) ([]Location, []Item, error) {
+func getLocationsCommon(repo repository, ids *[]string, search *string, tags *[]string) ([]location, []item, error) {
 	locs, err := repo.GetLocations(ids)
 	if err != nil {
 		return nil, nil, fmt.Errorf("get locations: %w", err)
@@ -54,27 +54,27 @@ func getLocations(repo Repo, ids *[]string, search *string, tags *[]string) ([]L
 	return filledLocs, remainingItems, nil
 }
 
-func GetLocations(repo Repo, search *string, tags *[]string) ([]Location, []Item, error) {
-	return getLocations(repo, nil, search, tags)
+func getLocations(repo repository, search *string, tags *[]string) ([]location, []item, error) {
+	return getLocationsCommon(repo, nil, search, tags)
 }
 
-var ErrLocationNotFound = errors.New("location not found")
+var errLocationNotFound = errors.New("location not found")
 
-func GetLocation(repo Repo, id string, search *string, tags *[]string) (Location, error) {
-	locations, _, err := getLocations(repo, getPtr([]string{id}), search, tags)
+func getLocation(repo repository, id string, search *string, tags *[]string) (location, error) {
+	locations, _, err := getLocationsCommon(repo, getPtr([]string{id}), search, tags)
 	if err != nil {
-		return Location{}, err
+		return location{}, err
 	}
 
 	if len(locations) == 0 {
-		return Location{}, ErrLocationNotFound
+		return location{}, errLocationNotFound
 	}
 
 	return locations[0], nil
 }
 
-func CreateLocation(repo Repo, validate *validator.Validate, name string) error {
-	if err := validate.Var(name, Location{}.GetNameConstraints()); err != nil {
+func createLocation(repo repository, validate *validator.Validate, name string) error {
+	if err := validate.Var(name, location{}.GetNameConstraints()); err != nil {
 		return fmt.Errorf("name validation: %w", err)
 	}
 
@@ -85,8 +85,8 @@ func CreateLocation(repo Repo, validate *validator.Validate, name string) error 
 	return nil
 }
 
-func UpdateLocation(repo Repo, validate *validator.Validate, id string, name string) error {
-	if err := validate.Var(name, Location{}.GetNameConstraints()); err != nil {
+func updateLocation(repo repository, validate *validator.Validate, id string, name string) error {
+	if err := validate.Var(name, location{}.GetNameConstraints()); err != nil {
 		return fmt.Errorf("name validation: %w", err)
 	}
 
@@ -97,7 +97,7 @@ func UpdateLocation(repo Repo, validate *validator.Validate, id string, name str
 	return nil
 }
 
-func DeleteLocation(repo Repo, id string) error {
+func deleteLocation(repo repository, id string) error {
 	if err := repo.DeleteLocation(id); err != nil {
 		return fmt.Errorf("delete location: %w", err)
 	}

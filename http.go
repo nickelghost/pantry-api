@@ -50,7 +50,7 @@ func respondFor(w http.ResponseWriter, r *http.Request, code int, err error) {
 	respond(w, r, code, err, res)
 }
 
-func GetServer(handler http.Handler) *http.Server {
+func getServer(handler http.Handler) *http.Server {
 	return &http.Server{
 		Addr:              net.JoinHostPort("0.0.0.0", "8080"),
 		Handler:           handler,
@@ -58,18 +58,18 @@ func GetServer(handler http.Handler) *http.Server {
 	}
 }
 
-func GetRouter(repo Repo, validate *validator.Validate) http.Handler {
+func getRouter(repo repository, validate *validator.Validate) http.Handler {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /locations", IndexLocationsHandler(repo))
-	mux.HandleFunc("GET /locations/{id}", GetLocationHandler(repo))
-	mux.HandleFunc("POST /locations", CreateLocationHandler(repo, validate))
-	mux.HandleFunc("PUT /locations/{id}", UpdateLocationHandler(repo, validate))
-	mux.HandleFunc("DELETE /locations/{id}", DeleteLocationHandler(repo))
-	mux.HandleFunc("POST /items", CreateItemHandler(repo, validate))
-	mux.HandleFunc("PUT /items/{id}", UpdateItemHandler(repo, validate))
-	mux.HandleFunc("PATCH /items/{id}/location", UpdateItemLocationHandler(repo))
-	mux.HandleFunc("DELETE /items/{id}", DeleteItemHandler(repo))
+	mux.HandleFunc("GET /locations", indexLocationsHandler(repo))
+	mux.HandleFunc("GET /locations/{id}", getLocationHandler(repo))
+	mux.HandleFunc("POST /locations", createLocationHandler(repo, validate))
+	mux.HandleFunc("PUT /locations/{id}", updateLocationHandler(repo, validate))
+	mux.HandleFunc("DELETE /locations/{id}", deleteLocationHandler(repo))
+	mux.HandleFunc("POST /items", createItemHandler(repo, validate))
+	mux.HandleFunc("PUT /items/{id}", updateItemHandler(repo, validate))
+	mux.HandleFunc("PATCH /items/{id}/location", updateItemLocationHandler(repo))
+	mux.HandleFunc("DELETE /items/{id}", deleteItemHandler(repo))
 
 	var handler http.Handler = mux
 
@@ -133,7 +133,7 @@ func useCORS(next http.Handler) http.Handler {
 	})
 }
 
-func IndexLocationsHandler(repo Repo) http.HandlerFunc {
+func indexLocationsHandler(repo repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var search *string
 
@@ -148,7 +148,7 @@ func IndexLocationsHandler(repo Repo) http.HandlerFunc {
 			tags = &vals
 		}
 
-		locs, remItems, err := GetLocations(repo, search, tags)
+		locs, remItems, err := getLocations(repo, search, tags)
 		if err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
@@ -156,15 +156,15 @@ func IndexLocationsHandler(repo Repo) http.HandlerFunc {
 		}
 
 		res := struct {
-			Locations      []Location `json:"locations"`
-			RemainingItems []Item     `json:"remainingItems"`
+			Locations      []location `json:"locations"`
+			RemainingItems []item     `json:"remainingItems"`
 		}{Locations: locs, RemainingItems: remItems}
 
 		respond(w, r, http.StatusOK, nil, res)
 	}
 }
 
-func GetLocationHandler(repo Repo) http.HandlerFunc {
+func getLocationHandler(repo repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
@@ -181,8 +181,8 @@ func GetLocationHandler(repo Repo) http.HandlerFunc {
 			tags = &vals
 		}
 
-		loc, err := GetLocation(repo, id, search, tags)
-		if errors.Is(err, ErrLocationNotFound) {
+		loc, err := getLocation(repo, id, search, tags)
+		if errors.Is(err, errLocationNotFound) {
 			respondFor(w, r, http.StatusNotFound, err)
 
 			return
@@ -193,14 +193,14 @@ func GetLocationHandler(repo Repo) http.HandlerFunc {
 		}
 
 		res := struct {
-			Location `json:"location"`
-		}{Location: loc}
+			location `json:"location"`
+		}{location: loc}
 
 		respond(w, r, http.StatusOK, nil, res)
 	}
 }
 
-func CreateLocationHandler(repo Repo, validate *validator.Validate) http.HandlerFunc {
+func createLocationHandler(repo repository, validate *validator.Validate) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body := struct {
 			Name string `json:"name"`
@@ -211,7 +211,7 @@ func CreateLocationHandler(repo Repo, validate *validator.Validate) http.Handler
 			return
 		}
 
-		if err := CreateLocation(repo, validate, body.Name); err != nil {
+		if err := createLocation(repo, validate, body.Name); err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
 			return
@@ -221,7 +221,7 @@ func CreateLocationHandler(repo Repo, validate *validator.Validate) http.Handler
 	}
 }
 
-func UpdateLocationHandler(repo Repo, validate *validator.Validate) http.HandlerFunc {
+func updateLocationHandler(repo repository, validate *validator.Validate) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
@@ -234,7 +234,7 @@ func UpdateLocationHandler(repo Repo, validate *validator.Validate) http.Handler
 			return
 		}
 
-		if err := UpdateLocation(repo, validate, id, body.Name); err != nil {
+		if err := updateLocation(repo, validate, id, body.Name); err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
 			return
@@ -244,11 +244,11 @@ func UpdateLocationHandler(repo Repo, validate *validator.Validate) http.Handler
 	}
 }
 
-func DeleteLocationHandler(repo Repo) http.HandlerFunc {
+func deleteLocationHandler(repo repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
-		if err := DeleteLocation(repo, id); err != nil {
+		if err := deleteLocation(repo, id); err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
 			return
@@ -258,16 +258,16 @@ func DeleteLocationHandler(repo Repo) http.HandlerFunc {
 	}
 }
 
-func CreateItemHandler(repo Repo, validate *validator.Validate) http.HandlerFunc {
+func createItemHandler(repo repository, validate *validator.Validate) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body WriteItemParams
+		var body writeItemParams
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			respondFor(w, r, http.StatusBadRequest, err)
 
 			return
 		}
 
-		err := CreateItem(repo, validate, body)
+		err := createItem(repo, validate, body)
 		if err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
@@ -278,18 +278,18 @@ func CreateItemHandler(repo Repo, validate *validator.Validate) http.HandlerFunc
 	}
 }
 
-func UpdateItemHandler(repo Repo, validate *validator.Validate) http.HandlerFunc {
+func updateItemHandler(repo repository, validate *validator.Validate) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
-		var body WriteItemParams
+		var body writeItemParams
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			respondFor(w, r, http.StatusBadRequest, err)
 
 			return
 		}
 
-		if err := UpdateItem(repo, validate, id, body); err != nil {
+		if err := updateItem(repo, validate, id, body); err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
 			return
@@ -299,7 +299,7 @@ func UpdateItemHandler(repo Repo, validate *validator.Validate) http.HandlerFunc
 	}
 }
 
-func UpdateItemLocationHandler(repo Repo) http.HandlerFunc {
+func updateItemLocationHandler(repo repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
@@ -312,7 +312,7 @@ func UpdateItemLocationHandler(repo Repo) http.HandlerFunc {
 			return
 		}
 
-		if err := UpdateItemLocation(repo, id, body.LocationID); err != nil {
+		if err := updateItemLocation(repo, id, body.LocationID); err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
 			return
@@ -322,11 +322,11 @@ func UpdateItemLocationHandler(repo Repo) http.HandlerFunc {
 	}
 }
 
-func DeleteItemHandler(repo Repo) http.HandlerFunc {
+func deleteItemHandler(repo repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
-		if err := DeleteItem(repo, id); err != nil {
+		if err := deleteItem(repo, id); err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
 			return

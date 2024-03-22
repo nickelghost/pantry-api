@@ -12,8 +12,8 @@ func TestCreateItem(t *testing.T) {
 	t.Parallel()
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	mockRepo := &MockRepo{}
-	params := WriteItemParams{
+	mockRepo := &mockRepository{}
+	params := writeItemParams{
 		Name:       "Cheese",
 		Type:       getPtr("250g"),
 		Tags:       []string{"dairy", "smelly"},
@@ -24,7 +24,7 @@ func TestCreateItem(t *testing.T) {
 		LocationID: getPtr("my-loc"),
 	}
 
-	err := CreateItem(mockRepo, validate, params)
+	err := createItem(mockRepo, validate, params)
 	if err != nil {
 		t.Errorf("Got error: %s", err)
 	}
@@ -42,9 +42,9 @@ func TestUpdateItem(t *testing.T) {
 	t.Parallel()
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	mockRepo := &MockRepo{}
+	mockRepo := &mockRepository{}
 	id := "cheese"
-	params := WriteItemParams{
+	params := writeItemParams{
 		Name:       "Cheese",
 		Type:       getPtr("250g"),
 		Tags:       []string{"dairy", "smelly"},
@@ -55,7 +55,7 @@ func TestUpdateItem(t *testing.T) {
 		LocationID: getPtr("my-loc"),
 	}
 
-	err := UpdateItem(mockRepo, validate, id, params)
+	err := updateItem(mockRepo, validate, id, params)
 	if err != nil {
 		t.Errorf("Got error: %s", err)
 	}
@@ -87,9 +87,9 @@ func TestUpdateItemLocation(t *testing.T) {
 	}
 
 	for _, row := range data {
-		mockRepo := &MockRepo{}
+		mockRepo := &mockRepository{}
 
-		err := UpdateItemLocation(mockRepo, row.id, row.locationID)
+		err := updateItemLocation(mockRepo, row.id, row.locationID)
 		if err != nil {
 			t.Errorf("Got error: %s", err)
 		}
@@ -113,9 +113,9 @@ func TestDeleteItem(t *testing.T) {
 	ids := []string{"id1", "id2", "007"}
 
 	for _, id := range ids {
-		repo := &MockRepo{}
+		repo := &mockRepository{}
 
-		err := DeleteItem(repo, id)
+		err := deleteItem(repo, id)
 		if err != nil {
 			t.Errorf("Returned unexpected error for %s: %+v", id, err)
 		}
