@@ -17,6 +17,7 @@ type item struct {
 	BoughtAt   time.Time  `json:"boughtAt"`
 	OpenedAt   *time.Time `json:"openedAt"`
 	ExpiresAt  *time.Time `json:"expiresAt"`
+	Lifespan   *int       `json:"lifespan"`
 	LocationID *string    `json:"locationId"`
 	Location   *location  `json:"location,omitempty"`
 }
@@ -30,6 +31,7 @@ type writeItemParams struct {
 	BoughtAt   time.Time  `json:"boughtAt"`
 	OpenedAt   *time.Time `json:"openedAt"`
 	ExpiresAt  *time.Time `json:"expiresAt"`
+	Lifespan   *int       `json:"lifespan"   validate:"omitempty,gte=0"`
 	LocationID *string    `json:"locationId"`
 }
 

@@ -250,6 +250,7 @@ type dynamoDBWriteItemParams struct {
 	BoughtAt   time.Time  `json:":boughtAt"`
 	OpenedAt   *time.Time `json:":openedAt"`
 	ExpiresAt  *time.Time `json:":expiresAt"`
+	Lifespan   *int       `json:":lifespan"`
 	LocationID *string    `json:":locationId"`
 }
 
@@ -264,6 +265,7 @@ func (repo dynamoDBRepository) CreateItem(params writeItemParams) error {
 		BoughtAt:   params.BoughtAt,
 		OpenedAt:   params.OpenedAt,
 		ExpiresAt:  params.ExpiresAt,
+		Lifespan:   params.Lifespan,
 		LocationID: params.LocationID,
 	}
 
@@ -310,6 +312,7 @@ func (repo dynamoDBRepository) UpdateItem(id string, params writeItemParams) err
 			boughtAt = :boughtAt,
 			openedAt = :openedAt,
 			expiresAt = :expiresAt,
+			lifespan = :lifespan,
 			locationId = :locationId
 		`),
 	})
