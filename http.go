@@ -122,6 +122,7 @@ func useCORS(next http.Handler) http.Handler {
 		}
 
 		w.Header().Set("Access-Control-Allow-Headers", os.Getenv("ACCESS_CONTROL_ALLOW_HEADERS"))
+		w.Header().Set("Access-Control-Allow-Methods", "*")
 
 		if r.Method == http.MethodOptions {
 			respondFor(w, r, http.StatusOK, nil)
