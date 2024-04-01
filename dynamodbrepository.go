@@ -43,6 +43,10 @@ func dynamoToItems(dynamoItems []map[string]*dynamodb.AttributeValue) ([]item, e
 			return nil, fmt.Errorf("unmarshal item: %w", err)
 		}
 
+		if i.Tags == nil {
+			i.Tags = []string{}
+		}
+
 		items = append(items, i)
 	}
 
@@ -246,7 +250,6 @@ type dynamoDBWriteItemParams struct {
 	Type       *string    `json:":type"`
 	Tags       []string   `json:":tags"`
 	Price      *int       `json:":price"`
-	ImageURL   *string    `json:":imageUrl"`
 	BoughtAt   time.Time  `json:":boughtAt"`
 	OpenedAt   *time.Time `json:":openedAt"`
 	ExpiresAt  *time.Time `json:":expiresAt"`
@@ -261,7 +264,6 @@ func (repo dynamoDBRepository) CreateItem(params writeItemParams) error {
 		Type:       params.Type,
 		Tags:       params.Tags,
 		Price:      params.Price,
-		ImageURL:   params.ImageURL,
 		BoughtAt:   params.BoughtAt,
 		OpenedAt:   params.OpenedAt,
 		ExpiresAt:  params.ExpiresAt,
@@ -308,7 +310,6 @@ func (repo dynamoDBRepository) UpdateItem(id string, params writeItemParams) err
 			#type = :type,
 			tags = :tags,
 			price = :price,
-			imageUrl = :imageUrl,
 			boughtAt = :boughtAt,
 			openedAt = :openedAt,
 			expiresAt = :expiresAt,
