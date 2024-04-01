@@ -13,7 +13,6 @@ type item struct {
 	Type       *string    `json:"type"`
 	Tags       []string   `json:"tags"`
 	Price      *int       `json:"price"`
-	ImageURL   *string    `json:"imageUrl"`
 	BoughtAt   time.Time  `json:"boughtAt"`
 	OpenedAt   *time.Time `json:"openedAt"`
 	ExpiresAt  *time.Time `json:"expiresAt"`
@@ -27,7 +26,6 @@ type writeItemParams struct {
 	Type       *string    `json:"type"`
 	Tags       []string   `json:"tags"`
 	Price      *int       `json:"price"      validate:"omitempty,gte=0"`
-	ImageURL   *string    `json:"imageUrl"   validate:"omitempty,url"`
 	BoughtAt   time.Time  `json:"boughtAt"`
 	OpenedAt   *time.Time `json:"openedAt"`
 	ExpiresAt  *time.Time `json:"expiresAt"`

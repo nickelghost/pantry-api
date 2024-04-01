@@ -17,7 +17,6 @@ func TestCreateItem(t *testing.T) {
 		Name:       "Cheese",
 		Type:       getPtr("250g"),
 		Tags:       []string{"dairy", "smelly"},
-		ImageURL:   nil,
 		Price:      getPtr(1499),
 		BoughtAt:   time.Now(),
 		ExpiresAt:  getPtr(time.Now().Add(time.Hour * 240)), // 10 days
@@ -48,7 +47,6 @@ func TestUpdateItem(t *testing.T) {
 		Name:       "Cheese",
 		Type:       getPtr("250g"),
 		Tags:       []string{"dairy", "smelly"},
-		ImageURL:   nil,
 		Price:      getPtr(1499),
 		BoughtAt:   time.Now(),
 		ExpiresAt:  getPtr(time.Now().Add(time.Hour * 240)), // 10 days
