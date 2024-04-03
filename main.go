@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
 	"os"
 
+	"cloud.google.com/go/firestore"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -18,13 +20,31 @@ func main() {
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
 
-	sess := session.Must(session.NewSession())
-	client := dynamodb.New(sess)
+	var repo repository
 
-	repo := dynamoDBRepository{
-		client:         client,
-		locationsTable: os.Getenv("DYNAMODB_LOCATIONS_TABLE"),
-		itemsTable:     os.Getenv("DYNAMODB_ITEMS_TABLE"),
+	switch os.Getenv("DB") {
+	case "firestore":
+		client, err := firestore.NewClient(context.Background(), "personal-419019")
+		if err != nil {
+			slog.Error("failed to create firestore client", "err", err)
+
+			return
+		}
+
+		defer client.Close()
+
+		repo = firestoreRepository{client: client}
+	case "dynamodb":
+		sess := session.Must(session.NewSession())
+		client := dynamodb.New(sess)
+
+		repo = dynamoDBRepository{
+			client:         client,
+			locationsTable: os.Getenv("DYNAMODB_LOCATIONS_TABLE"),
+			itemsTable:     os.Getenv("DYNAMODB_ITEMS_TABLE"),
+		}
+	default:
+		slog.Error("unknown DB", "db", os.Getenv("DB"))
 	}
 
 	handler := getRouter(repo, validate)

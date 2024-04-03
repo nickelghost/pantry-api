@@ -145,7 +145,7 @@ func (repo dynamoDBRepository) UpdateLocation(id string, name string) error {
 }
 
 func (repo dynamoDBRepository) DeleteLocation(id string) error {
-	items, err := repo.GetItems(nil, nil, &[]string{id})
+	items, err := repo.GetItems(nil, &[]string{id})
 	if err != nil {
 		return err
 	}
@@ -190,15 +190,10 @@ func (repo dynamoDBRepository) DeleteLocation(id string) error {
 }
 
 func (repo dynamoDBRepository) GetItems(
-	search *string,
 	tags *[]string,
 	locationIDs *[]string,
 ) ([]item, error) {
 	conditions := []expression.ConditionBuilder{}
-
-	if search != nil {
-		conditions = append(conditions, expression.Name("name").Contains(*search))
-	}
 
 	if tags != nil {
 		for _, tag := range *tags {

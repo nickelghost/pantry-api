@@ -6,7 +6,6 @@ type repository interface {
 	UpdateLocation(id string, name string) error
 	DeleteLocation(id string) error
 	GetItems(
-		search *string,
 		tags *[]string,
 		locationIDs *[]string,
 	) ([]item, error)

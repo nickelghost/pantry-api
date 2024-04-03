@@ -17,7 +17,6 @@ type mockRepository struct {
 	DeleteLocationID    string
 
 	GetItemsCalls       int
-	GetItemsSearch      *string
 	GetItemsTags        *[]string
 	GetItemsLocationIDs *[]string
 	GetItemsRes         []item
@@ -72,12 +71,10 @@ func (repo *mockRepository) DeleteLocation(id string) error {
 }
 
 func (repo *mockRepository) GetItems(
-	search *string,
 	tags *[]string,
 	locationIDs *[]string,
 ) ([]item, error) {
 	repo.GetItemsCalls++
-	repo.GetItemsSearch = search
 	repo.GetItemsTags = tags
 	repo.GetItemsLocationIDs = locationIDs
 

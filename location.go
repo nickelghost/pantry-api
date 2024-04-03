@@ -38,13 +38,13 @@ func fillLocations(locations []location, items []item) ([]location, []item) {
 	return locations, remainingItems
 }
 
-func getLocationsCommon(repo repository, ids *[]string, search *string, tags *[]string) ([]location, []item, error) {
+func getLocationsCommon(repo repository, ids *[]string, tags *[]string) ([]location, []item, error) {
 	locs, err := repo.GetLocations(ids)
 	if err != nil {
 		return nil, nil, fmt.Errorf("get locations: %w", err)
 	}
 
-	items, err := repo.GetItems(search, tags, ids)
+	items, err := repo.GetItems(tags, ids)
 	if err != nil {
 		return nil, nil, fmt.Errorf("get items: %w", err)
 	}
@@ -54,14 +54,14 @@ func getLocationsCommon(repo repository, ids *[]string, search *string, tags *[]
 	return filledLocs, remainingItems, nil
 }
 
-func getLocations(repo repository, search *string, tags *[]string) ([]location, []item, error) {
-	return getLocationsCommon(repo, nil, search, tags)
+func getLocations(repo repository, tags *[]string) ([]location, []item, error) {
+	return getLocationsCommon(repo, nil, tags)
 }
 
 var errLocationNotFound = errors.New("location not found")
 
-func getLocation(repo repository, id string, search *string, tags *[]string) (location, error) {
-	locations, _, err := getLocationsCommon(repo, getPtr([]string{id}), search, tags)
+func getLocation(repo repository, id string, tags *[]string) (location, error) {
+	locations, _, err := getLocationsCommon(repo, getPtr([]string{id}), tags)
 	if err != nil {
 		return location{}, err
 	}

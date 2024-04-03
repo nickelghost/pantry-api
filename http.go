@@ -136,20 +136,14 @@ func useCORS(next http.Handler) http.Handler {
 
 func indexLocationsHandler(repo repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var search *string
-
 		var tags *[]string
-
-		if val := r.URL.Query().Get("search"); val != "" {
-			search = &val
-		}
 
 		if val := r.URL.Query().Get("tags"); val != "" {
 			vals := strings.Split(val, ",")
 			tags = &vals
 		}
 
-		locs, remItems, err := getLocations(repo, search, tags)
+		locs, remItems, err := getLocations(repo, tags)
 		if err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
@@ -169,20 +163,14 @@ func getLocationHandler(repo repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
-		var search *string
-
 		var tags *[]string
-
-		if val := r.URL.Query().Get("search"); val != "" {
-			search = &val
-		}
 
 		if val := r.URL.Query().Get("tags"); val != "" {
 			vals := strings.Split(val, ",")
 			tags = &vals
 		}
 
-		loc, err := getLocation(repo, id, search, tags)
+		loc, err := getLocation(repo, id, tags)
 		if errors.Is(err, errLocationNotFound) {
 			respondFor(w, r, http.StatusNotFound, err)
 
