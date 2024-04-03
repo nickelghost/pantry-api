@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -23,7 +24,7 @@ func TestCreateItem(t *testing.T) {
 		LocationID: getPtr("my-loc"),
 	}
 
-	err := createItem(mockRepo, validate, params)
+	err := createItem(context.Background(), mockRepo, validate, params)
 	if err != nil {
 		t.Errorf("Got error: %s", err)
 	}
@@ -53,7 +54,7 @@ func TestUpdateItem(t *testing.T) {
 		LocationID: getPtr("my-loc"),
 	}
 
-	err := updateItem(mockRepo, validate, id, params)
+	err := updateItem(context.Background(), mockRepo, validate, id, params)
 	if err != nil {
 		t.Errorf("Got error: %s", err)
 	}
@@ -87,7 +88,7 @@ func TestUpdateItemLocation(t *testing.T) {
 	for _, row := range data {
 		mockRepo := &mockRepository{}
 
-		err := updateItemLocation(mockRepo, row.id, row.locationID)
+		err := updateItemLocation(context.Background(), mockRepo, row.id, row.locationID)
 		if err != nil {
 			t.Errorf("Got error: %s", err)
 		}
@@ -113,7 +114,7 @@ func TestDeleteItem(t *testing.T) {
 	for _, id := range ids {
 		repo := &mockRepository{}
 
-		err := deleteItem(repo, id)
+		err := deleteItem(context.Background(), repo, id)
 		if err != nil {
 			t.Errorf("Returned unexpected error for %s: %+v", id, err)
 		}

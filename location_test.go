@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"strings"
@@ -17,7 +18,7 @@ func TestGetLocationsParams(t *testing.T) {
 
 	mockRepo := &mockRepository{}
 
-	_, _, err := getLocations(mockRepo, tags)
+	_, _, err := getLocations(context.Background(), mockRepo, tags)
 	if err != nil {
 		t.Errorf("Got error: %+v", err)
 	}
@@ -52,7 +53,7 @@ func TestGetLocationsRes(t *testing.T) {
 
 	mockRepo := &mockRepository{GetLocationsRes: locations, GetItemsRes: items}
 
-	filledLocations, remainingItems, err := getLocations(mockRepo, nil)
+	filledLocations, remainingItems, err := getLocations(context.Background(), mockRepo, nil)
 	if err != nil {
 		t.Errorf("Got error: %+v", err)
 	}
@@ -108,7 +109,7 @@ func TestGetLocationsErrs(t *testing.T) {
 	}
 
 	for _, s := range errScenarios {
-		_, _, err := getLocations(s.repo, nil)
+		_, _, err := getLocations(context.Background(), s.repo, nil)
 		if !strings.Contains(err.Error(), s.errStr) {
 			t.Errorf(`Expected "%s" to contain "%s"`, err, s.errStr)
 		}
@@ -125,7 +126,7 @@ func TestGetLocation(t *testing.T) {
 	}
 	tags := getPtr([]string{"microwave", "oven"})
 
-	res, err := getLocation(mockRepo, l.ID, tags)
+	res, err := getLocation(context.Background(), mockRepo, l.ID, tags)
 	if err != nil {
 		t.Errorf("Got error: %s", err)
 	}
@@ -180,7 +181,7 @@ func TestLocationErrs(t *testing.T) {
 	}
 
 	for _, s := range errScenarios {
-		_, err := getLocation(s.repo, uuid.NewString(), nil)
+		_, err := getLocation(context.Background(), s.repo, uuid.NewString(), nil)
 		if !strings.Contains(err.Error(), s.errStr) {
 			t.Errorf(`Expected "%s" to contain "%s"`, err, s.errStr)
 		}
@@ -202,7 +203,7 @@ func TestCreateLocation(t *testing.T) {
 	for _, cn := range correctNames {
 		repo := &mockRepository{}
 
-		err := createLocation(repo, validate, cn)
+		err := createLocation(context.Background(), repo, validate, cn)
 		if err != nil {
 			t.Errorf("Returned unexpected error for %s: %+v", cn, err)
 		}
@@ -228,7 +229,7 @@ func TestCreateLocation(t *testing.T) {
 
 	for _, in := range incorrectNames {
 		repo := &mockRepository{}
-		err := createLocation(repo, validate, in)
+		err := createLocation(context.Background(), repo, validate, in)
 
 		if err == nil {
 			t.Errorf("Did not return error on %s", in)
@@ -255,7 +256,7 @@ func TestUpdateLocation(t *testing.T) {
 		repo := &mockRepository{}
 		id := uuid.New().String()
 
-		err := updateLocation(repo, validate, id, cn)
+		err := updateLocation(context.Background(), repo, validate, id, cn)
 		if err != nil {
 			t.Errorf("Returned unexpected error for %s: %+v", cn, err)
 		}
@@ -285,7 +286,7 @@ func TestUpdateLocation(t *testing.T) {
 
 	for _, in := range incorrectNames {
 		repo := &mockRepository{}
-		err := updateLocation(repo, validate, "id", in)
+		err := updateLocation(context.Background(), repo, validate, "id", in)
 
 		if err == nil {
 			t.Errorf("Did not return error on %s", in)
@@ -305,7 +306,7 @@ func TestDeleteLocation(t *testing.T) {
 	for _, id := range ids {
 		repo := &mockRepository{}
 
-		err := deleteLocation(repo, id)
+		err := deleteLocation(context.Background(), repo, id)
 		if err != nil {
 			t.Errorf("Returned unexpected error for %s: %+v", id, err)
 		}

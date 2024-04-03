@@ -60,25 +60,25 @@ func firestoreToItems(iter *firestore.DocumentIterator) ([]item, error) {
 	return items, nil
 }
 
-func (repo firestoreRepository) GetLocations(ids *[]string) ([]location, error) {
+func (repo firestoreRepository) GetLocations(ctx context.Context, ids *[]string) ([]location, error) {
 	q := repo.client.Collection("locations").Query
 
 	if ids != nil {
 		q = q.Where("id", "in", ids)
 	}
 
-	iter := q.Documents(context.TODO())
+	iter := q.Documents(ctx)
 
 	return firestoreToLocations(iter)
 }
 
-func (repo firestoreRepository) CreateLocation(name string) error {
+func (repo firestoreRepository) CreateLocation(ctx context.Context, name string) error {
 	id := uuid.NewString()
 
 	_, err := repo.client.
 		Collection("locations").
 		Doc(id).
-		Set(context.TODO(), map[string]any{
+		Set(ctx, map[string]any{
 			"name": name,
 		})
 	if err != nil {
@@ -88,11 +88,11 @@ func (repo firestoreRepository) CreateLocation(name string) error {
 	return nil
 }
 
-func (repo firestoreRepository) UpdateLocation(id string, name string) error {
+func (repo firestoreRepository) UpdateLocation(ctx context.Context, id string, name string) error {
 	_, err := repo.client.
 		Collection("locations").
 		Doc(id).
-		Update(context.TODO(), []firestore.Update{{
+		Update(ctx, []firestore.Update{{
 			Path:  "name",
 			Value: name,
 		}})
@@ -103,13 +103,13 @@ func (repo firestoreRepository) UpdateLocation(id string, name string) error {
 	return nil
 }
 
-func (repo firestoreRepository) DeleteLocation(id string) error {
+func (repo firestoreRepository) DeleteLocation(ctx context.Context, id string) error {
 	itemsIter := repo.client.
 		Collection("items").
 		Where("locationId", "==", id).
-		Documents(context.TODO())
+		Documents(ctx)
 
-	err := repo.client.RunTransaction(context.TODO(), func(_ context.Context, tx *firestore.Transaction) error {
+	err := repo.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
 		for {
 			doc, err := itemsIter.Next()
 			if errors.Is(err, iterator.Done) {
@@ -141,7 +141,7 @@ func (repo firestoreRepository) DeleteLocation(id string) error {
 	return nil
 }
 
-func (repo firestoreRepository) GetItems(tags *[]string, locationIDs *[]string) ([]item, error) {
+func (repo firestoreRepository) GetItems(ctx context.Context, tags *[]string, locationIDs *[]string) ([]item, error) {
 	q := repo.client.Collection("items").Query
 
 	if tags != nil {
@@ -152,18 +152,18 @@ func (repo firestoreRepository) GetItems(tags *[]string, locationIDs *[]string) 
 		q = q.Where("locationId", "in", locationIDs)
 	}
 
-	iter := q.Documents(context.TODO())
+	iter := q.Documents(ctx)
 
 	return firestoreToItems(iter)
 }
 
-func (repo firestoreRepository) CreateItem(params writeItemParams) error {
+func (repo firestoreRepository) CreateItem(ctx context.Context, params writeItemParams) error {
 	id := uuid.NewString()
 
 	_, err := repo.client.
 		Collection("items").
 		Doc(id).
-		Set(context.TODO(), params)
+		Set(ctx, params)
 	if err != nil {
 		return fmt.Errorf("firestore create location: %w", err)
 	}
@@ -171,17 +171,17 @@ func (repo firestoreRepository) CreateItem(params writeItemParams) error {
 	return nil
 }
 
-func (repo firestoreRepository) UpdateItem(id string, params writeItemParams) error {
+func (repo firestoreRepository) UpdateItem(ctx context.Context, id string, params writeItemParams) error {
 	doc := repo.client.Collection("items").Doc(id)
 
-	_, err := doc.Get(context.TODO())
+	_, err := doc.Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		return fmt.Errorf("item not found: %w", err)
 	} else if err != nil {
 		return fmt.Errorf("firestore get item: %w", err)
 	}
 
-	_, err = doc.Set(context.TODO(), params)
+	_, err = doc.Set(ctx, params)
 	if err != nil {
 		return fmt.Errorf("firestore update location: %w", err)
 	}
@@ -189,11 +189,11 @@ func (repo firestoreRepository) UpdateItem(id string, params writeItemParams) er
 	return nil
 }
 
-func (repo firestoreRepository) UpdateItemLocation(id string, locationID *string) error {
+func (repo firestoreRepository) UpdateItemLocation(ctx context.Context, id string, locationID *string) error {
 	_, err := repo.client.
 		Collection("items").
 		Doc(id).
-		Update(context.TODO(), []firestore.Update{{
+		Update(ctx, []firestore.Update{{
 			Path:  "locationId",
 			Value: locationID,
 		}})
@@ -204,11 +204,11 @@ func (repo firestoreRepository) UpdateItemLocation(id string, locationID *string
 	return nil
 }
 
-func (repo firestoreRepository) DeleteItem(id string) error {
+func (repo firestoreRepository) DeleteItem(ctx context.Context, id string) error {
 	_, err := repo.client.
 		Collection("items").
 		Doc(id).
-		Delete(context.TODO())
+		Delete(ctx)
 	if err != nil {
 		return fmt.Errorf("firestore delete item: %w", err)
 	}

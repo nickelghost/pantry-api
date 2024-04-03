@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -89,7 +90,7 @@ func (repo dynamoDBRepository) batchGetLocations(ids []string) ([]location, erro
 	return dynamoToLocations(output.Responses[repo.locationsTable])
 }
 
-func (repo dynamoDBRepository) GetLocations(ids *[]string) ([]location, error) {
+func (repo dynamoDBRepository) GetLocations(_ context.Context, ids *[]string) ([]location, error) {
 	if ids != nil {
 		return repo.batchGetLocations(*ids)
 	}
@@ -97,7 +98,7 @@ func (repo dynamoDBRepository) GetLocations(ids *[]string) ([]location, error) {
 	return repo.scanGetLocations()
 }
 
-func (repo dynamoDBRepository) CreateLocation(name string) error {
+func (repo dynamoDBRepository) CreateLocation(_ context.Context, name string) error {
 	loc := location{
 		ID:   uuid.NewString(),
 		Name: name,
@@ -119,7 +120,7 @@ func (repo dynamoDBRepository) CreateLocation(name string) error {
 	return nil
 }
 
-func (repo dynamoDBRepository) UpdateLocation(id string, name string) error {
+func (repo dynamoDBRepository) UpdateLocation(_ context.Context, id string, name string) error {
 	_, err := repo.client.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: &repo.locationsTable,
 		Key: map[string]*dynamodb.AttributeValue{
@@ -144,8 +145,8 @@ func (repo dynamoDBRepository) UpdateLocation(id string, name string) error {
 	return nil
 }
 
-func (repo dynamoDBRepository) DeleteLocation(id string) error {
-	items, err := repo.GetItems(nil, &[]string{id})
+func (repo dynamoDBRepository) DeleteLocation(ctx context.Context, id string) error {
+	items, err := repo.GetItems(ctx, nil, &[]string{id})
 	if err != nil {
 		return err
 	}
@@ -189,7 +190,7 @@ func (repo dynamoDBRepository) DeleteLocation(id string) error {
 	return nil
 }
 
-func (repo dynamoDBRepository) GetItems(
+func (repo dynamoDBRepository) GetItems(_ context.Context,
 	tags *[]string,
 	locationIDs *[]string,
 ) ([]item, error) {
@@ -252,7 +253,7 @@ type dynamoDBWriteItemParams struct {
 	LocationID *string    `json:":locationId"`
 }
 
-func (repo dynamoDBRepository) CreateItem(params writeItemParams) error {
+func (repo dynamoDBRepository) CreateItem(_ context.Context, params writeItemParams) error {
 	i := item{
 		ID:         uuid.NewString(),
 		Name:       params.Name,
@@ -282,7 +283,7 @@ func (repo dynamoDBRepository) CreateItem(params writeItemParams) error {
 	return nil
 }
 
-func (repo dynamoDBRepository) UpdateItem(id string, params writeItemParams) error {
+func (repo dynamoDBRepository) UpdateItem(_ context.Context, id string, params writeItemParams) error {
 	attrs, err := dynamodbattribute.MarshalMap(dynamoDBWriteItemParams(params))
 	if err != nil {
 		return fmt.Errorf("marshal write item params: %w", err)
@@ -319,7 +320,7 @@ func (repo dynamoDBRepository) UpdateItem(id string, params writeItemParams) err
 	return nil
 }
 
-func (repo dynamoDBRepository) UpdateItemLocation(id string, locationID *string) error {
+func (repo dynamoDBRepository) UpdateItemLocation(_ context.Context, id string, locationID *string) error {
 	attrs, err := dynamodbattribute.MarshalMap(struct {
 		LocationID *string `json:":locationId"`
 	}{
@@ -346,7 +347,7 @@ func (repo dynamoDBRepository) UpdateItemLocation(id string, locationID *string)
 	return nil
 }
 
-func (repo dynamoDBRepository) DeleteItem(id string) error {
+func (repo dynamoDBRepository) DeleteItem(_ context.Context, id string) error {
 	_, err := repo.client.DeleteItem(&dynamodb.DeleteItemInput{
 		TableName: aws.String(repo.itemsTable),
 		Key: map[string]*dynamodb.AttributeValue{

@@ -143,7 +143,7 @@ func indexLocationsHandler(repo repository) http.HandlerFunc {
 			tags = &vals
 		}
 
-		locs, remItems, err := getLocations(repo, tags)
+		locs, remItems, err := getLocations(r.Context(), repo, tags)
 		if err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
@@ -170,7 +170,7 @@ func getLocationHandler(repo repository) http.HandlerFunc {
 			tags = &vals
 		}
 
-		loc, err := getLocation(repo, id, tags)
+		loc, err := getLocation(r.Context(), repo, id, tags)
 		if errors.Is(err, errLocationNotFound) {
 			respondFor(w, r, http.StatusNotFound, err)
 
@@ -200,7 +200,7 @@ func createLocationHandler(repo repository, validate *validator.Validate) http.H
 			return
 		}
 
-		if err := createLocation(repo, validate, body.Name); err != nil {
+		if err := createLocation(r.Context(), repo, validate, body.Name); err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
 			return
@@ -223,7 +223,7 @@ func updateLocationHandler(repo repository, validate *validator.Validate) http.H
 			return
 		}
 
-		if err := updateLocation(repo, validate, id, body.Name); err != nil {
+		if err := updateLocation(r.Context(), repo, validate, id, body.Name); err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
 			return
@@ -237,7 +237,7 @@ func deleteLocationHandler(repo repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
-		if err := deleteLocation(repo, id); err != nil {
+		if err := deleteLocation(r.Context(), repo, id); err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
 			return
@@ -256,7 +256,7 @@ func createItemHandler(repo repository, validate *validator.Validate) http.Handl
 			return
 		}
 
-		err := createItem(repo, validate, body)
+		err := createItem(r.Context(), repo, validate, body)
 		if err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
@@ -278,7 +278,7 @@ func updateItemHandler(repo repository, validate *validator.Validate) http.Handl
 			return
 		}
 
-		if err := updateItem(repo, validate, id, body); err != nil {
+		if err := updateItem(r.Context(), repo, validate, id, body); err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
 			return
@@ -301,7 +301,7 @@ func updateItemLocationHandler(repo repository) http.HandlerFunc {
 			return
 		}
 
-		if err := updateItemLocation(repo, id, body.LocationID); err != nil {
+		if err := updateItemLocation(r.Context(), repo, id, body.LocationID); err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
 			return
@@ -315,7 +315,7 @@ func deleteItemHandler(repo repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
-		if err := deleteItem(repo, id); err != nil {
+		if err := deleteItem(r.Context(), repo, id); err != nil {
 			respondFor(w, r, http.StatusInternalServerError, err)
 
 			return

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -38,13 +39,15 @@ func fillLocations(locations []location, items []item) ([]location, []item) {
 	return locations, remainingItems
 }
 
-func getLocationsCommon(repo repository, ids *[]string, tags *[]string) ([]location, []item, error) {
-	locs, err := repo.GetLocations(ids)
+func getLocationsCommon(
+	ctx context.Context, repo repository, ids *[]string, tags *[]string,
+) ([]location, []item, error) {
+	locs, err := repo.GetLocations(ctx, ids)
 	if err != nil {
 		return nil, nil, fmt.Errorf("get locations: %w", err)
 	}
 
-	items, err := repo.GetItems(tags, ids)
+	items, err := repo.GetItems(ctx, tags, ids)
 	if err != nil {
 		return nil, nil, fmt.Errorf("get items: %w", err)
 	}
@@ -54,14 +57,14 @@ func getLocationsCommon(repo repository, ids *[]string, tags *[]string) ([]locat
 	return filledLocs, remainingItems, nil
 }
 
-func getLocations(repo repository, tags *[]string) ([]location, []item, error) {
-	return getLocationsCommon(repo, nil, tags)
+func getLocations(ctx context.Context, repo repository, tags *[]string) ([]location, []item, error) {
+	return getLocationsCommon(ctx, repo, nil, tags)
 }
 
 var errLocationNotFound = errors.New("location not found")
 
-func getLocation(repo repository, id string, tags *[]string) (location, error) {
-	locations, _, err := getLocationsCommon(repo, getPtr([]string{id}), tags)
+func getLocation(ctx context.Context, repo repository, id string, tags *[]string) (location, error) {
+	locations, _, err := getLocationsCommon(ctx, repo, getPtr([]string{id}), tags)
 	if err != nil {
 		return location{}, err
 	}
@@ -73,32 +76,32 @@ func getLocation(repo repository, id string, tags *[]string) (location, error) {
 	return locations[0], nil
 }
 
-func createLocation(repo repository, validate *validator.Validate, name string) error {
+func createLocation(ctx context.Context, repo repository, validate *validator.Validate, name string) error {
 	if err := validate.Var(name, location{}.GetNameConstraints()); err != nil {
 		return fmt.Errorf("name validation: %w", err)
 	}
 
-	if err := repo.CreateLocation(name); err != nil {
+	if err := repo.CreateLocation(ctx, name); err != nil {
 		return fmt.Errorf("create location: %w", err)
 	}
 
 	return nil
 }
 
-func updateLocation(repo repository, validate *validator.Validate, id string, name string) error {
+func updateLocation(ctx context.Context, repo repository, validate *validator.Validate, id string, name string) error {
 	if err := validate.Var(name, location{}.GetNameConstraints()); err != nil {
 		return fmt.Errorf("name validation: %w", err)
 	}
 
-	if err := repo.UpdateLocation(id, name); err != nil {
+	if err := repo.UpdateLocation(ctx, id, name); err != nil {
 		return fmt.Errorf("update location: %w", err)
 	}
 
 	return nil
 }
 
-func deleteLocation(repo repository, id string) error {
-	if err := repo.DeleteLocation(id); err != nil {
+func deleteLocation(ctx context.Context, repo repository, id string) error {
+	if err := repo.DeleteLocation(ctx, id); err != nil {
 		return fmt.Errorf("delete location: %w", err)
 	}
 

@@ -1,5 +1,7 @@
 package main
 
+import "context"
+
 type mockRepository struct {
 	GetLocationsCalls int
 	GetLocationsIDs   *[]string
@@ -41,21 +43,21 @@ type mockRepository struct {
 	DeleteItemID    string
 }
 
-func (repo *mockRepository) GetLocations(ids *[]string) ([]location, error) {
+func (repo *mockRepository) GetLocations(_ context.Context, ids *[]string) ([]location, error) {
 	repo.GetLocationsCalls++
 	repo.GetLocationsIDs = ids
 
 	return repo.GetLocationsRes, repo.GetLocationsErr
 }
 
-func (repo *mockRepository) CreateLocation(name string) error {
+func (repo *mockRepository) CreateLocation(_ context.Context, name string) error {
 	repo.CreateLocationCalls++
 	repo.CreateLocationName = name
 
 	return nil
 }
 
-func (repo *mockRepository) UpdateLocation(id string, name string) error {
+func (repo *mockRepository) UpdateLocation(_ context.Context, id string, name string) error {
 	repo.UpdateLocationCalls++
 	repo.UpdateLocationID = id
 	repo.UpdateLocationName = name
@@ -63,14 +65,14 @@ func (repo *mockRepository) UpdateLocation(id string, name string) error {
 	return nil
 }
 
-func (repo *mockRepository) DeleteLocation(id string) error {
+func (repo *mockRepository) DeleteLocation(_ context.Context, id string) error {
 	repo.DeleteLocationCalls++
 	repo.DeleteLocationID = id
 
 	return nil
 }
 
-func (repo *mockRepository) GetItems(
+func (repo *mockRepository) GetItems(_ context.Context,
 	tags *[]string,
 	locationIDs *[]string,
 ) ([]item, error) {
@@ -81,14 +83,14 @@ func (repo *mockRepository) GetItems(
 	return repo.GetItemsRes, repo.GetItemsErr
 }
 
-func (repo *mockRepository) CreateItem(params writeItemParams) error {
+func (repo *mockRepository) CreateItem(_ context.Context, params writeItemParams) error {
 	repo.CreateItemCalls++
 	repo.CreateItemParams = params
 
 	return nil
 }
 
-func (repo *mockRepository) UpdateItem(id string, params writeItemParams) error {
+func (repo *mockRepository) UpdateItem(_ context.Context, id string, params writeItemParams) error {
 	repo.UpdateItemCalls++
 	repo.UpdateItemID = id
 	repo.UpdateItemParams = params
@@ -96,7 +98,7 @@ func (repo *mockRepository) UpdateItem(id string, params writeItemParams) error 
 	return nil
 }
 
-func (repo *mockRepository) UpdateItemLocation(id string, locationID *string) error {
+func (repo *mockRepository) UpdateItemLocation(_ context.Context, id string, locationID *string) error {
 	repo.UpdateItemLocationCalls++
 	repo.UpdateItemLocationID = id
 	repo.UpdateItemLocationValue = locationID
@@ -104,7 +106,7 @@ func (repo *mockRepository) UpdateItemLocation(id string, locationID *string) er
 	return nil
 }
 
-func (repo *mockRepository) DeleteItem(id string) error {
+func (repo *mockRepository) DeleteItem(_ context.Context, id string) error {
 	repo.DeleteItemCalls++
 	repo.DeleteItemID = id
 
