@@ -58,7 +58,11 @@ func getServer(handler http.Handler) *http.Server {
 	}
 }
 
-func getRouter(repo repository, validate *validator.Validate) http.Handler {
+func getRouter(
+	repo repository,
+	validate *validator.Validate,
+	auth authentication,
+) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /locations", indexLocationsHandler(repo))
@@ -72,6 +76,10 @@ func getRouter(repo repository, validate *validator.Validate) http.Handler {
 	mux.HandleFunc("DELETE /items/{id}", deleteItemHandler(repo))
 
 	var handler http.Handler = mux
+
+	if auth != nil {
+		handler = useAuth(handler, auth)
+	}
 
 	handler = useCORS(handler)
 	handler = useRequestLogging(handler)
@@ -126,6 +134,18 @@ func useCORS(next http.Handler) http.Handler {
 
 		if r.Method == http.MethodOptions {
 			respondFor(w, r, http.StatusOK, nil)
+
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func useAuth(next http.Handler, auth authentication) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := auth.Check(r.Context(), r); err != nil {
+			respondFor(w, r, http.StatusUnauthorized, err)
 
 			return
 		}
