@@ -5,9 +5,6 @@ go 1.22.1
 require (
 	cloud.google.com/go/firestore v1.15.0
 	firebase.google.com/go/v4 v4.14.0
-	github.com/aws/aws-lambda-go v1.46.0
-	github.com/aws/aws-sdk-go v1.51.1
-	github.com/awslabs/aws-lambda-go-api-proxy v0.16.1
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/google/uuid v1.6.0
 	github.com/magefile/mage v1.15.0
@@ -35,7 +32,6 @@ require (
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.3 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0 // indirect
