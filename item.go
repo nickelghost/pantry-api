@@ -25,9 +25,9 @@ type item struct {
 type writeItemParams struct {
 	Name       string     `json:"name"       validate:"required,min=2"`
 	Type       *string    `json:"type"`
-	Tags       []string   `json:"tags"`
+	Tags       []string   `json:"tags"       validate:"required"`
 	Price      *int       `json:"price"      validate:"omitempty,gte=0"`
-	BoughtAt   time.Time  `json:"boughtAt"`
+	BoughtAt   time.Time  `json:"boughtAt"   validate:"required"`
 	OpenedAt   *time.Time `json:"openedAt"`
 	ExpiresAt  *time.Time `json:"expiresAt"`
 	Lifespan   *int       `json:"lifespan"   validate:"omitempty,gte=0"`
