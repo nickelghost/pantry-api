@@ -50,6 +50,10 @@ func respondFor(w http.ResponseWriter, r *http.Request, code int, err error) {
 	respond(w, r, code, err, res)
 }
 
+func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	respondFor(w, r, http.StatusNotFound, nil)
+}
+
 func getServer(handler http.Handler) *http.Server {
 	return &http.Server{
 		Addr:              net.JoinHostPort("0.0.0.0", "8080"),
@@ -74,6 +78,7 @@ func getRouter(
 	mux.HandleFunc("PUT /items/{id}", updateItemHandler(repo, validate))
 	mux.HandleFunc("PATCH /items/{id}/location", updateItemLocationHandler(repo))
 	mux.HandleFunc("DELETE /items/{id}", deleteItemHandler(repo))
+	mux.HandleFunc("/", notFoundHandler)
 
 	var handler http.Handler = mux
 
