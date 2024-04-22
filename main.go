@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go/v4"
@@ -43,7 +44,11 @@ func getFirestoreRepository() (firestoreRepository, error) {
 }
 
 func main() {
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, nil)))
+	if strings.ToLower(os.Getenv("LOG_FORMAT")) == "json" {
+		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
+	} else {
+		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, nil)))
+	}
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
 
@@ -58,7 +63,7 @@ func main() {
 
 	var auth authentication
 
-	if os.Getenv("AUTH") == "firebase" {
+	if os.Getenv("SKIP_AUTH") != "true" {
 		var err error
 
 		auth, err = getFirebaseAuthentication()
