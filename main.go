@@ -12,27 +12,27 @@ import (
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go/v4"
 	"github.com/go-playground/validator/v10"
+	"go.opentelemetry.io/otel/trace"
 )
 
-func getFirebaseAuthentication() (firebaseAuthentication, error) {
-	app, err := firebase.NewApp(context.Background(), &firebase.Config{
+func getFirebaseAuthentication(ctx context.Context, tracer trace.Tracer) (firebaseAuthentication, error) {
+	app, err := firebase.NewApp(ctx, &firebase.Config{
 		ProjectID: os.Getenv("CLOUDSDK_CORE_PROJECT"),
 	})
 	if err != nil {
 		return firebaseAuthentication{}, fmt.Errorf("failed to create firebase app: %w", err)
 	}
 
-	client, err := app.Auth(context.Background())
+	client, err := app.Auth(ctx)
 	if err != nil {
 		return firebaseAuthentication{}, fmt.Errorf("failed to create firebase auth client: %w", err)
 	}
 
-	return firebaseAuthentication{client: client}, nil
+	return firebaseAuthentication{client: client, tracer: tracer}, nil
 }
 
-func getFirestoreRepository() (firestoreRepository, error) {
-	client, err := firestore.NewClientWithDatabase(
-		context.Background(),
+func getFirestoreRepository(ctx context.Context, tracer trace.Tracer) (firestoreRepository, error) {
+	client, err := firestore.NewClientWithDatabase(ctx,
 		os.Getenv("CLOUDSDK_CORE_PROJECT"),
 		os.Getenv("FIRESTORE_DATABASE"),
 	)
@@ -40,10 +40,12 @@ func getFirestoreRepository() (firestoreRepository, error) {
 		return firestoreRepository{}, fmt.Errorf("failed to create firestore client: %w", err)
 	}
 
-	return firestoreRepository{client: client}, nil
+	return firestoreRepository{client: client, tracer: tracer}, nil
 }
 
 func main() {
+	ctx := context.Background()
+
 	if strings.ToLower(os.Getenv("LOG_FORMAT")) == "json" {
 		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
 	} else {
@@ -52,7 +54,16 @@ func main() {
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
 
-	firestoreRepo, err := getFirestoreRepository()
+	tracer, tracerShutdown, err := getTracer(ctx)
+	if err != nil {
+		slog.Error("failed to set up tracing", "err", err)
+
+		return
+	}
+
+	defer tracerShutdown()
+
+	firestoreRepo, err := getFirestoreRepository(ctx, tracer)
 	if err != nil {
 		slog.Error("failed to create firestore repo", "err", err)
 
@@ -66,7 +77,7 @@ func main() {
 	if os.Getenv("SKIP_AUTH") != "true" {
 		var err error
 
-		auth, err = getFirebaseAuthentication()
+		auth, err = getFirebaseAuthentication(ctx, tracer)
 		if err != nil {
 			slog.Error("failed to create firebase auth", "err", err)
 

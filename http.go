@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 const httpHeaderTimeout = 1 * time.Second
@@ -87,6 +88,8 @@ func getRouter(
 	}
 
 	handler = useCORS(handler)
+
+	handler = otelhttp.NewHandler(handler, "request")
 	handler = useRequestLogging(handler)
 	handler = useRequestID(handler)
 

@@ -16,4 +16,5 @@ linters:
   disable:
     - depguard
     - exhaustruct
+    - ireturn
     - varnamelen

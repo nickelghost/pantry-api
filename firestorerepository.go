@@ -7,6 +7,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,6 +15,7 @@ import (
 
 type firestoreRepository struct {
 	client *firestore.Client
+	tracer trace.Tracer
 }
 
 func firestoreToLocations(iter *firestore.DocumentIterator) ([]location, error) {
@@ -61,6 +63,9 @@ func firestoreToItems(iter *firestore.DocumentIterator) ([]item, error) {
 }
 
 func (repo firestoreRepository) GetLocations(ctx context.Context, ids *[]string) ([]location, error) {
+	ctx, span := repo.tracer.Start(ctx, "firestoreRepository.GetLocations")
+	defer span.End()
+
 	q := repo.client.Collection("locations").Query
 
 	if ids != nil {
@@ -142,6 +147,9 @@ func (repo firestoreRepository) DeleteLocation(ctx context.Context, id string) e
 }
 
 func (repo firestoreRepository) GetItems(ctx context.Context, tags *[]string, locationIDs *[]string) ([]item, error) {
+	ctx, span := repo.tracer.Start(ctx, "firestoreRepository.GetItems")
+	defer span.End()
+
 	q := repo.client.Collection("items").Query
 
 	if tags != nil {
