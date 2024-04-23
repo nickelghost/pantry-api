@@ -21,7 +21,7 @@ func (auth firebaseAuthentication) Check(ctx context.Context, r *http.Request) e
 
 	idToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 
-	_, err := auth.client.VerifyIDTokenAndCheckRevoked(ctx, idToken)
+	_, err := auth.client.VerifyIDToken(ctx, idToken)
 	if err != nil {
 		return fmt.Errorf("failed to verify ID token: %w", err)
 	}
