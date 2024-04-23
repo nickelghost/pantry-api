@@ -3,12 +3,11 @@ name: Deploy
 
 on:
   push:
-    tags:
-      - "*"
+    branches: main
 
 env:
   PROJECT_ID: personal-419019
-  IMAGE_NAME: europe-west1-docker.pkg.dev/personal-419019/pantry/api:${{ github.ref_name }}
+  IMAGE_NAME: europe-west1-docker.pkg.dev/personal-419019/pantry/api:${{ github.sha }}
 
 jobs:
   build:
