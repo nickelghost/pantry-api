@@ -14,10 +14,15 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/api/option"
 )
 
 func getTracer(ctx context.Context) (trace.Tracer, func(), error) {
+	if os.Getenv("ENABLE_TRACING") != "true" {
+		return noop.NewTracerProvider().Tracer("main"), func() {}, nil
+	}
+
 	exporter, err := texporter.New(
 		texporter.WithProjectID(os.Getenv("CLOUDSDK_CORE_PROJECT")),
 		texporter.WithTraceClientOptions([]option.ClientOption{option.WithTelemetryDisabled()}),
