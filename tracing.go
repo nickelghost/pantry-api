@@ -58,3 +58,16 @@ func getTracer(ctx context.Context) (trace.Tracer, func(), error) {
 
 	return tp.Tracer("main"), shutdown, nil
 }
+
+func getGoogleTraceString(ctx context.Context) string {
+	sc := trace.SpanContextFromContext(ctx)
+	if sc.HasTraceID() {
+		return fmt.Sprintf(
+			"projects/%s/traces/%s",
+			os.Getenv("CLOUDSDK_CORE_PROJECT"),
+			sc.TraceID().String(),
+		)
+	}
+
+	return ""
+}

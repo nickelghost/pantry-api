@@ -19,23 +19,25 @@ import (
 const httpHeaderTimeout = 1 * time.Second
 
 func respond(w http.ResponseWriter, r *http.Request, code int, err error, res any) {
-	requestID, _ := r.Context().Value(requestIDKey).(string)
+	ctx := r.Context()
+	requestID, _ := ctx.Value(requestIDKey).(string)
 	statusText := http.StatusText(code)
+	logger := slog.With("requestID", requestID, "trace", getGoogleTraceString(ctx))
 
 	switch {
 	case code >= http.StatusInternalServerError:
-		slog.Error(statusText, "requestID", requestID, "err", err)
+		logger.Error(statusText, "err", err)
 	case code >= http.StatusBadRequest:
-		slog.Warn(statusText, "requestID", requestID, "err", err)
+		logger.Warn(statusText, "err", err)
 	default:
-		slog.Info(statusText, "requestID", requestID)
+		logger.Info(statusText)
 	}
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(code)
 
 	if err := json.NewEncoder(w).Encode(res); err != nil {
-		slog.Error("failed to encode response", "err", err, "requestID", requestID)
+		logger.Error("failed to encode response", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
@@ -89,9 +91,9 @@ func getRouter(
 
 	handler = useCORS(handler)
 
-	handler = otelhttp.NewHandler(handler, "request")
 	handler = useRequestLogging(handler)
 	handler = useRequestID(handler)
+	handler = otelhttp.NewHandler(handler, "request")
 
 	return handler
 }
@@ -112,10 +114,11 @@ func useRequestID(next http.Handler) http.Handler {
 func useRequestLogging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+		ctx := r.Context()
 
 		next.ServeHTTP(w, r)
 
-		requestID, _ := r.Context().Value(requestIDKey).(string)
+		requestID, _ := ctx.Value(requestIDKey).(string)
 
 		slog.Info(
 			"Request completed",
@@ -123,6 +126,7 @@ func useRequestLogging(next http.Handler) http.Handler {
 			"path", r.URL.Path,
 			"duration", time.Since(start),
 			"requestID", requestID,
+			"trace", getGoogleTraceString(ctx),
 		)
 	})
 }
