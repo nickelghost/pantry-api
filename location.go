@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -42,14 +43,28 @@ func fillLocations(locations []location, items []item) ([]location, []item) {
 func getLocationsCommon(
 	ctx context.Context, repo repository, ids *[]string, tags *[]string,
 ) ([]location, []item, error) {
-	locs, err := repo.GetLocations(ctx, ids)
-	if err != nil {
-		return nil, nil, fmt.Errorf("get locations: %w", err)
-	}
+	wg := new(sync.WaitGroup)
+	locs := []location{}
+	items := []item{}
+	err := error(nil)
 
-	items, err := repo.GetItems(ctx, tags, ids)
+	wg.Add(2) //nolint:gomnd
+
+	go func() {
+		locs, err = repo.GetLocations(ctx, ids)
+
+		wg.Done()
+	}()
+	go func() {
+		items, err = repo.GetItems(ctx, tags, ids)
+
+		wg.Done()
+	}()
+
+	wg.Wait()
+
 	if err != nil {
-		return nil, nil, fmt.Errorf("get items: %w", err)
+		return nil, nil, fmt.Errorf("get locations and items: %w", err)
 	}
 
 	filledLocs, remainingItems := fillLocations(locs, items)
