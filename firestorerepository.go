@@ -18,6 +18,15 @@ type firestoreRepository struct {
 	tracer trace.Tracer
 }
 
+func firestoreToLocation(doc *firestore.DocumentSnapshot) (location, error) {
+	l := location{ID: doc.Ref.ID}
+	if err := doc.DataTo(&l); err != nil {
+		return location{}, fmt.Errorf("firestore to location: %w", err)
+	}
+
+	return l, nil
+}
+
 func firestoreToLocations(iter *firestore.DocumentIterator) ([]location, error) {
 	locations := []location{}
 
@@ -29,9 +38,9 @@ func firestoreToLocations(iter *firestore.DocumentIterator) ([]location, error) 
 			return nil, fmt.Errorf("firestore to locations next: %w", err)
 		}
 
-		l := location{ID: doc.Ref.ID}
-		if err := doc.DataTo(&l); err != nil {
-			return nil, fmt.Errorf("firestore to location: %w", err)
+		l, err := firestoreToLocation(doc)
+		if err != nil {
+			return nil, err
 		}
 
 		locations = append(locations, l)
@@ -66,15 +75,34 @@ func (repo firestoreRepository) GetLocations(ctx context.Context, ids *[]string)
 	ctx, span := repo.tracer.Start(ctx, "firestoreRepository.GetLocations")
 	defer span.End()
 
-	q := repo.client.Collection("locations").Query
-
-	if ids != nil {
-		q = q.Where("id", "in", ids)
+	if ids == nil {
+		return firestoreToLocations(
+			repo.client.Collection("locations").Documents(ctx),
+		)
 	}
 
-	iter := q.Documents(ctx)
+	refs := []*firestore.DocumentRef{}
+	for _, id := range *ids {
+		refs = append(refs, repo.client.Collection("locations").Doc(id))
+	}
 
-	return firestoreToLocations(iter)
+	docs, err := repo.client.GetAll(ctx, refs)
+	if err != nil {
+		return nil, fmt.Errorf("firestore get locations: %w", err)
+	}
+
+	locations := []location{}
+
+	for _, doc := range docs {
+		l, err := firestoreToLocation(doc)
+		if err != nil {
+			return nil, err
+		}
+
+		locations = append(locations, l)
+	}
+
+	return locations, nil
 }
 
 func (repo firestoreRepository) CreateLocation(ctx context.Context, name string) error {
@@ -84,7 +112,7 @@ func (repo firestoreRepository) CreateLocation(ctx context.Context, name string)
 		Collection("locations").
 		Doc(id).
 		Set(ctx, map[string]any{
-			"name": name,
+			"Name": name,
 		})
 	if err != nil {
 		return fmt.Errorf("firestore create location: %w", err)
@@ -98,7 +126,7 @@ func (repo firestoreRepository) UpdateLocation(ctx context.Context, id string, n
 		Collection("locations").
 		Doc(id).
 		Update(ctx, []firestore.Update{{
-			Path:  "name",
+			Path:  "Name",
 			Value: name,
 		}})
 	if err != nil {
@@ -111,7 +139,7 @@ func (repo firestoreRepository) UpdateLocation(ctx context.Context, id string, n
 func (repo firestoreRepository) DeleteLocation(ctx context.Context, id string) error {
 	itemsIter := repo.client.
 		Collection("items").
-		Where("locationId", "==", id).
+		Where("LocationID", "==", id).
 		Documents(ctx)
 
 	err := repo.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
@@ -124,7 +152,7 @@ func (repo firestoreRepository) DeleteLocation(ctx context.Context, id string) e
 			}
 
 			err = tx.Update(doc.Ref, []firestore.Update{{
-				Path:  "locationId",
+				Path:  "LocationID",
 				Value: nil,
 			}})
 			if err != nil {
@@ -153,11 +181,13 @@ func (repo firestoreRepository) GetItems(ctx context.Context, tags *[]string, lo
 	q := repo.client.Collection("items").Query
 
 	if tags != nil {
-		q = q.Where("tags", "array-contains", "tag")
+		for _, tag := range *tags {
+			q = q.Where("Tags", "array-contains", tag)
+		}
 	}
 
 	if locationIDs != nil {
-		q = q.Where("locationId", "in", locationIDs)
+		q = q.Where("LocationID", "in", locationIDs)
 	}
 
 	iter := q.Documents(ctx)
@@ -202,7 +232,7 @@ func (repo firestoreRepository) UpdateItemLocation(ctx context.Context, id strin
 		Collection("items").
 		Doc(id).
 		Update(ctx, []firestore.Update{{
-			Path:  "locationId",
+			Path:  "LocationID",
 			Value: locationID,
 		}})
 	if err != nil {
