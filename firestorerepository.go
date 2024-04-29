@@ -181,9 +181,7 @@ func (repo firestoreRepository) GetItems(ctx context.Context, tags *[]string, lo
 	q := repo.client.Collection("items").Query
 
 	if tags != nil {
-		for _, tag := range *tags {
-			q = q.Where("Tags", "array-contains", tag)
-		}
+		q = q.Where("Tags", "array-contains-any", *tags)
 	}
 
 	if locationIDs != nil {
