@@ -46,9 +46,12 @@ func getFirestoreRepository(ctx context.Context, tracer trace.Tracer) (firestore
 func main() {
 	ctx := context.Background()
 
-	if strings.ToLower(os.Getenv("LOG_FORMAT")) == "json" {
+	switch strings.ToLower(os.Getenv("LOG_FORMAT")) {
+	case "json":
 		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
-	} else {
+	case "google_cloud":
+		slog.SetDefault(slog.New(NewCloudLoggingHandler()))
+	default:
 		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, nil)))
 	}
 
