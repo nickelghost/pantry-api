@@ -1,3 +1,4 @@
 /bootstrap
 /pantry-api
 coverage.html
+.env
