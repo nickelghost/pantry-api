@@ -150,14 +150,17 @@ func main() {
 
 	startLogger()
 
+	var err error
+
 	switch strings.ToLower(os.Getenv("MODE")) {
 	case "notify_job":
-		if err := initNotifyJob(ctx); err != nil {
-			slog.Error("failed to initialize notify job", "err", err)
-		}
+		err = initNotifyJob(ctx)
 	default:
-		if err := initAPI(ctx); err != nil {
-			slog.Error("failed to initialize API", "err", err)
-		}
+		err = initAPI(ctx)
+	}
+
+	if err != nil {
+		slog.Error("failed to initialize", "err", err)
+		os.Exit(1)
 	}
 }
