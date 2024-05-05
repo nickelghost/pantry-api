@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -95,6 +96,13 @@ func initNotifyJob(ctx context.Context) error {
 			apiKey:  os.Getenv("INFOBIP_API_KEY"),
 			from:    os.Getenv("INFOBIP_FROM"),
 		}
+	} else if token := os.Getenv("TELEGRAM_TOKEN"); token != "" {
+		chatID, err := strconv.Atoi(os.Getenv("TELEGRAM_CHAT_ID"))
+		if err != nil {
+			return fmt.Errorf("invalid Telegram chat id: %w", err)
+		}
+
+		n = telegramNotifier{client: httpClient, token: token, chatID: chatID}
 	} else {
 		n = terminalNotifier{}
 	}

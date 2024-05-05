@@ -82,7 +82,7 @@ func (n infobipNotifier) NotifyAboutItems(
 		return err
 	}
 
-	req, err := n.getRequest(ctx, "POST", infobipURL.String(), payload, contentType)
+	req, err := n.getRequest(ctx, http.MethodPost, infobipURL.String(), payload, contentType)
 	if err != nil {
 		return err
 	}
