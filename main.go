@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go/v4"
@@ -15,6 +16,8 @@ import (
 	"github.com/joho/godotenv"
 	"go.opentelemetry.io/otel/trace"
 )
+
+const httpTimeout = 10 * time.Second
 
 func startLogger() {
 	switch strings.ToLower(os.Getenv("LOG_FORMAT")) {
@@ -60,14 +63,14 @@ func getFirestoreRepository(ctx context.Context, tracer trace.Tracer) (firestore
 }
 
 func initNotifyJob(ctx context.Context) error {
-	n := terminalNotifier{}
-
 	tracer, tracerShutdown, err := getTracer(ctx)
 	if err != nil {
 		return err
 	}
 
 	defer tracerShutdown()
+
+	httpClient := &http.Client{Timeout: httpTimeout}
 
 	firestoreRepo, err := getFirestoreRepository(ctx, tracer)
 	if err != nil {
@@ -76,7 +79,27 @@ func initNotifyJob(ctx context.Context) error {
 
 	defer firestoreRepo.client.Close()
 
-	if err := notifyAboutItems(ctx, firestoreRepo, n, nil); err != nil {
+	auth, err := getFirebaseAuthentication(ctx, tracer)
+	if err != nil {
+		return err
+	}
+
+	authRepo := firebaseAuthenticationRepository{client: auth.client}
+
+	var n notifier
+
+	if baseURL := os.Getenv("INFOBIP_API_BASE_URL"); baseURL != "" {
+		n = infobipNotifier{
+			client:  httpClient,
+			baseURL: baseURL,
+			apiKey:  os.Getenv("INFOBIP_API_KEY"),
+			from:    os.Getenv("INFOBIP_FROM"),
+		}
+	} else {
+		n = terminalNotifier{}
+	}
+
+	if err := notifyAboutItems(ctx, firestoreRepo, n, authRepo); err != nil {
 		slog.Error("failed to notify about items", "err", err)
 	}
 
