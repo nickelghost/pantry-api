@@ -60,7 +60,7 @@ func firestoreToItems(iter *firestore.DocumentIterator) ([]item, error) {
 			return nil, fmt.Errorf("firestore to items next: %w", err)
 		}
 
-		i := item{ID: doc.Ref.ID}
+		i := item{ID: doc.Ref.ID, Tags: []string{}}
 		if err := doc.DataTo(&i); err != nil {
 			return nil, fmt.Errorf("firestore to item: %w", err)
 		}
