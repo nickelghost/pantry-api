@@ -99,6 +99,10 @@ func notifyAboutItems(ctx context.Context, repo repository, n notifier, authRepo
 		}
 	}
 
+	if len(expiries) == 0 && len(comingExpiries) == 0 {
+		return nil
+	}
+
 	if err := n.NotifyAboutItems(ctx, expiries, comingExpiries, authRepo); err != nil {
 		return fmt.Errorf("notify about items: %w", err)
 	}
