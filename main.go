@@ -15,21 +15,13 @@ import (
 	firebase "firebase.google.com/go/v4"
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
+	"github.com/nickelghost/nglog"
+	"github.com/nickelghost/ngtel"
+	"github.com/nickelghost/ngtelgcp"
 	"go.opentelemetry.io/otel/trace"
 )
 
 const httpTimeout = 10 * time.Second
-
-func startLogger() {
-	switch strings.ToLower(os.Getenv("LOG_FORMAT")) {
-	case "json":
-		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
-	case "google_cloud":
-		slog.SetDefault(slog.New(NewCloudLoggingHandler()))
-	default:
-		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, nil)))
-	}
-}
 
 func getValidate() *validator.Validate {
 	return validator.New(validator.WithRequiredStructEnabled())
@@ -64,7 +56,14 @@ func getFirestoreRepository(ctx context.Context, tracer trace.Tracer) (firestore
 }
 
 func initNotifyJob(ctx context.Context) error {
-	tracer, tracerShutdown, err := getTracer(ctx)
+	tpOpts, resOpts, err := ngtelgcp.GetTracerOpts()
+	if err != nil {
+		return err
+	}
+
+	tracer, tracerShutdown, err := ngtel.CreateTracer(
+		ctx, os.Getenv("ENABLE_TRACING") == "true", "pantry-api", tpOpts, resOpts,
+	)
 	if err != nil {
 		return err
 	}
@@ -117,7 +116,14 @@ func initNotifyJob(ctx context.Context) error {
 func initAPI(ctx context.Context) error {
 	validate := getValidate()
 
-	tracer, tracerShutdown, err := getTracer(ctx)
+	tpOpts, resOpts, err := ngtelgcp.GetTracerOpts()
+	if err != nil {
+		return err
+	}
+
+	tracer, tracerShutdown, err := ngtel.CreateTracer(
+		ctx, os.Getenv("ENABLE_TRACING") == "true", "pantry-api", tpOpts, resOpts,
+	)
 	if err != nil {
 		return err
 	}
@@ -148,7 +154,7 @@ func main() {
 	_ = godotenv.Load()
 	ctx := context.Background()
 
-	startLogger()
+	nglog.SetUpLogger(os.Stderr, os.Getenv("LOG_FORMAT"), nglog.GetLogLevel(os.Getenv("LOG_LEVEL")))
 
 	var err error
 

@@ -1,10 +1,8 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
-	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -12,50 +10,12 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
+	"github.com/nickelghost/nghttp"
+	"github.com/nickelghost/ngtelgcp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 const httpHeaderTimeout = 1 * time.Second
-
-func respond(w http.ResponseWriter, r *http.Request, code int, err error, res any) {
-	ctx := r.Context()
-	requestID, _ := ctx.Value(requestIDKey).(string)
-	statusText := http.StatusText(code)
-	logger := slog.With("requestID", requestID, "trace", getGoogleTraceString(ctx))
-
-	switch {
-	case code >= http.StatusInternalServerError:
-		logger.Error(statusText, "err", err)
-	case code >= http.StatusBadRequest:
-		logger.Warn(statusText, "err", err)
-	default:
-		logger.Info(statusText)
-	}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(code)
-
-	if err := json.NewEncoder(w).Encode(res); err != nil {
-		logger.Error("failed to encode response", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-}
-
-type genericResponse struct {
-	Message string `json:"message"`
-}
-
-func respondFor(w http.ResponseWriter, r *http.Request, code int, err error) {
-	res := genericResponse{Message: http.StatusText(code)}
-	respond(w, r, code, err, res)
-}
-
-func notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	respondFor(w, r, http.StatusNotFound, nil)
-}
 
 func getServer(handler http.Handler) *http.Server {
 	return &http.Server{
@@ -81,7 +41,7 @@ func getRouter(
 	mux.HandleFunc("PUT /items/{id}", updateItemHandler(repo, validate))
 	mux.HandleFunc("PATCH /items/{id}/location", updateItemLocationHandler(repo))
 	mux.HandleFunc("DELETE /items/{id}", deleteItemHandler(repo))
-	mux.HandleFunc("/", notFoundHandler)
+	mux.HandleFunc("/", nghttp.GetNotFoundHandler(ngtelgcp.GetLogArgs))
 
 	var handler http.Handler = mux
 
@@ -89,75 +49,24 @@ func getRouter(
 		handler = useAuth(handler, auth)
 	}
 
-	handler = useCORS(handler)
-
-	handler = useRequestLogging(handler)
-	handler = useRequestID(handler)
+	handler = nghttp.UseCORS(
+		handler,
+		strings.Split(os.Getenv("ACCESS_CONTROL_ALLOW_ORIGIN"), ","),
+		strings.Split(os.Getenv("ACCESS_CONTROL_ALLOW_HEADERS"), ","),
+		[]string{"*"},
+		ngtelgcp.GetLogArgs,
+	)
+	handler = nghttp.UseRequestLogging(handler, ngtelgcp.GetLogArgs)
+	handler = nghttp.UseRequestID(handler, "X-Request-ID")
 	handler = otelhttp.NewHandler(handler, "request")
 
 	return handler
 }
 
-func useRequestID(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := r.Header.Get("X-Request-ID")
-		if id == "" {
-			id = uuid.NewString()
-		}
-
-		ctx := context.WithValue(r.Context(), requestIDKey, id)
-
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func useRequestLogging(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		ctx := r.Context()
-
-		next.ServeHTTP(w, r)
-
-		requestID, _ := ctx.Value(requestIDKey).(string)
-
-		slog.Info(
-			"Request completed",
-			"method", r.Method,
-			"path", r.URL.Path,
-			"duration", time.Since(start),
-			"requestID", requestID,
-			"trace", getGoogleTraceString(ctx),
-		)
-	})
-}
-
-func useCORS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
-
-		for _, allowedOrigin := range strings.Split(os.Getenv("ACCESS_CONTROL_ALLOW_ORIGIN"), ",") {
-			if allowedOrigin == origin {
-				w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-			}
-		}
-
-		w.Header().Set("Access-Control-Allow-Headers", os.Getenv("ACCESS_CONTROL_ALLOW_HEADERS"))
-		w.Header().Set("Access-Control-Allow-Methods", "*")
-
-		if r.Method == http.MethodOptions {
-			respondFor(w, r, http.StatusOK, nil)
-
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
 func useAuth(next http.Handler, auth authentication) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := auth.Check(r.Context(), r); err != nil {
-			respondFor(w, r, http.StatusUnauthorized, err)
+			nghttp.RespondGeneric(w, r, http.StatusUnauthorized, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
@@ -177,7 +86,7 @@ func indexLocationsHandler(repo repository) http.HandlerFunc {
 
 		locs, remItems, err := getLocations(r.Context(), repo, tags)
 		if err != nil {
-			respondFor(w, r, http.StatusInternalServerError, err)
+			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
@@ -187,7 +96,7 @@ func indexLocationsHandler(repo repository) http.HandlerFunc {
 			RemainingItems []item     `json:"remainingItems"`
 		}{Locations: locs, RemainingItems: remItems}
 
-		respond(w, r, http.StatusOK, nil, res)
+		nghttp.Respond(w, r, http.StatusOK, nil, res, ngtelgcp.GetLogArgs)
 	}
 }
 
@@ -204,11 +113,11 @@ func getLocationHandler(repo repository) http.HandlerFunc {
 
 		loc, err := getLocation(r.Context(), repo, id, tags)
 		if errors.Is(err, errLocationNotFound) {
-			respondFor(w, r, http.StatusNotFound, err)
+			nghttp.RespondGeneric(w, r, http.StatusNotFound, err, ngtelgcp.GetLogArgs)
 
 			return
 		} else if err != nil {
-			respondFor(w, r, http.StatusInternalServerError, err)
+			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
@@ -217,7 +126,7 @@ func getLocationHandler(repo repository) http.HandlerFunc {
 			location `json:"location"`
 		}{location: loc}
 
-		respond(w, r, http.StatusOK, nil, res)
+		nghttp.Respond(w, r, http.StatusOK, nil, res, ngtelgcp.GetLogArgs)
 	}
 }
 
@@ -227,18 +136,18 @@ func createLocationHandler(repo repository, validate *validator.Validate) http.H
 			Name string `json:"name"`
 		}{}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			respondFor(w, r, http.StatusBadRequest, err)
+			nghttp.RespondGeneric(w, r, http.StatusBadRequest, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
 
 		if err := createLocation(r.Context(), repo, validate, body.Name); err != nil {
-			respondFor(w, r, http.StatusInternalServerError, err)
+			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
 
-		respondFor(w, r, http.StatusCreated, nil)
+		nghttp.RespondGeneric(w, r, http.StatusCreated, nil, ngtelgcp.GetLogArgs)
 	}
 }
 
@@ -250,18 +159,18 @@ func updateLocationHandler(repo repository, validate *validator.Validate) http.H
 			Name string `json:"name"`
 		}{}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			respondFor(w, r, http.StatusBadRequest, err)
+			nghttp.RespondGeneric(w, r, http.StatusBadRequest, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
 
 		if err := updateLocation(r.Context(), repo, validate, id, body.Name); err != nil {
-			respondFor(w, r, http.StatusInternalServerError, err)
+			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
 
-		respondFor(w, r, http.StatusOK, nil)
+		nghttp.RespondGeneric(w, r, http.StatusOK, nil, ngtelgcp.GetLogArgs)
 	}
 }
 
@@ -270,12 +179,12 @@ func deleteLocationHandler(repo repository) http.HandlerFunc {
 		id := r.PathValue("id")
 
 		if err := deleteLocation(r.Context(), repo, id); err != nil {
-			respondFor(w, r, http.StatusInternalServerError, err)
+			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
 
-		respondFor(w, r, http.StatusOK, nil)
+		nghttp.RespondGeneric(w, r, http.StatusOK, nil, ngtelgcp.GetLogArgs)
 	}
 }
 
@@ -283,19 +192,19 @@ func createItemHandler(repo repository, validate *validator.Validate) http.Handl
 	return func(w http.ResponseWriter, r *http.Request) {
 		var body writeItemParams
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			respondFor(w, r, http.StatusBadRequest, err)
+			nghttp.RespondGeneric(w, r, http.StatusBadRequest, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
 
 		err := createItem(r.Context(), repo, validate, body)
 		if err != nil {
-			respondFor(w, r, http.StatusInternalServerError, err)
+			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
 
-		respondFor(w, r, http.StatusCreated, nil)
+		nghttp.RespondGeneric(w, r, http.StatusCreated, nil, ngtelgcp.GetLogArgs)
 	}
 }
 
@@ -305,18 +214,18 @@ func updateItemHandler(repo repository, validate *validator.Validate) http.Handl
 
 		var body writeItemParams
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			respondFor(w, r, http.StatusBadRequest, err)
+			nghttp.RespondGeneric(w, r, http.StatusBadRequest, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
 
 		if err := updateItem(r.Context(), repo, validate, id, body); err != nil {
-			respondFor(w, r, http.StatusInternalServerError, err)
+			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
 
-		respondFor(w, r, http.StatusOK, nil)
+		nghttp.RespondGeneric(w, r, http.StatusOK, nil, ngtelgcp.GetLogArgs)
 	}
 }
 
@@ -328,18 +237,18 @@ func updateItemLocationHandler(repo repository) http.HandlerFunc {
 			LocationID *string `json:"locationId"`
 		}{}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			respondFor(w, r, http.StatusBadRequest, err)
+			nghttp.RespondGeneric(w, r, http.StatusBadRequest, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
 
 		if err := updateItemLocation(r.Context(), repo, id, body.LocationID); err != nil {
-			respondFor(w, r, http.StatusInternalServerError, err)
+			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
 
-		respondFor(w, r, http.StatusOK, nil)
+		nghttp.RespondGeneric(w, r, http.StatusOK, nil, ngtelgcp.GetLogArgs)
 	}
 }
 
@@ -348,11 +257,11 @@ func deleteItemHandler(repo repository) http.HandlerFunc {
 		id := r.PathValue("id")
 
 		if err := deleteItem(r.Context(), repo, id); err != nil {
-			respondFor(w, r, http.StatusInternalServerError, err)
+			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtelgcp.GetLogArgs)
 
 			return
 		}
 
-		respondFor(w, r, http.StatusOK, nil)
+		nghttp.RespondGeneric(w, r, http.StatusOK, nil, ngtelgcp.GetLogArgs)
 	}
 }
