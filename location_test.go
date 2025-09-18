@@ -110,7 +110,7 @@ func TestGetLocationsErrs(t *testing.T) {
 
 	for _, s := range errScenarios {
 		_, _, err := getLocations(context.Background(), s.repo, nil)
-		if !strings.Contains(err.Error(), s.errStr) {
+		if err == nil || !strings.Contains(err.Error(), s.errStr) {
 			t.Errorf(`Expected "%s" to contain "%s"`, err, s.errStr)
 		}
 	}

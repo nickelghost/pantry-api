@@ -45,26 +45,31 @@ func getLocationsCommon(
 ) ([]location, []item, error) {
 	wg := new(sync.WaitGroup)
 	locs := []location{}
+	locsErr := error(nil)
 	items := []item{}
-	err := error(nil)
+	itemsErr := error(nil)
 
 	wg.Add(2) //nolint:gomnd
 
 	go func() {
-		locs, err = repo.GetLocations(ctx, ids)
+		locs, locsErr = repo.GetLocations(ctx, ids)
 
 		wg.Done()
 	}()
 	go func() {
-		items, err = repo.GetItems(ctx, tags, ids)
+		items, itemsErr = repo.GetItems(ctx, tags, ids)
 
 		wg.Done()
 	}()
 
 	wg.Wait()
 
-	if err != nil {
-		return nil, nil, fmt.Errorf("get locations and items: %w", err)
+	if locsErr != nil {
+		return nil, nil, fmt.Errorf("get locations: %w", locsErr)
+	}
+
+	if itemsErr != nil {
+		return nil, nil, fmt.Errorf("get items: %w", itemsErr)
 	}
 
 	filledLocs, remainingItems := fillLocations(locs, items)
