@@ -17,8 +17,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nickelghost/nglog"
 	"github.com/nickelghost/ngtel"
-	"github.com/nickelghost/ngtelgcp"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel"
 )
 
 const httpTimeout = 10 * time.Second
@@ -27,7 +26,7 @@ func getValidate() *validator.Validate {
 	return validator.New(validator.WithRequiredStructEnabled())
 }
 
-func getFirebaseAuthentication(ctx context.Context, tracer trace.Tracer) (firebaseAuthentication, error) {
+func getFirebaseAuthentication(ctx context.Context) (firebaseAuthentication, error) {
 	app, err := firebase.NewApp(ctx, &firebase.Config{
 		ProjectID: os.Getenv("CLOUDSDK_CORE_PROJECT"),
 	})
@@ -40,10 +39,10 @@ func getFirebaseAuthentication(ctx context.Context, tracer trace.Tracer) (fireba
 		return firebaseAuthentication{}, fmt.Errorf("failed to create firebase auth client: %w", err)
 	}
 
-	return firebaseAuthentication{client: client, tracer: tracer}, nil
+	return firebaseAuthentication{client: client, tracer: otel.Tracer("firebase-auth")}, nil
 }
 
-func getFirestoreRepository(ctx context.Context, tracer trace.Tracer) (firestoreRepository, error) {
+func getFirestoreRepository(ctx context.Context) (firestoreRepository, error) {
 	client, err := firestore.NewClientWithDatabase(ctx,
 		os.Getenv("CLOUDSDK_CORE_PROJECT"),
 		os.Getenv("FIRESTORE_DATABASE"),
@@ -52,34 +51,20 @@ func getFirestoreRepository(ctx context.Context, tracer trace.Tracer) (firestore
 		return firestoreRepository{}, fmt.Errorf("failed to create firestore client: %w", err)
 	}
 
-	return firestoreRepository{client: client, tracer: tracer}, nil
+	return firestoreRepository{client: client, tracer: otel.Tracer("firestore")}, nil
 }
 
 func initNotifyJob(ctx context.Context) error {
-	tpOpts, resOpts, err := ngtelgcp.GetTracerOpts()
-	if err != nil {
-		return err
-	}
-
-	tracer, tracerShutdown, err := ngtel.CreateTracer(
-		ctx, os.Getenv("ENABLE_TRACING") == "true", "pantry-api", tpOpts, resOpts,
-	)
-	if err != nil {
-		return err
-	}
-
-	defer tracerShutdown()
-
 	httpClient := &http.Client{Timeout: httpTimeout}
 
-	firestoreRepo, err := getFirestoreRepository(ctx, tracer)
+	firestoreRepo, err := getFirestoreRepository(ctx)
 	if err != nil {
 		return err
 	}
 
 	defer firestoreRepo.client.Close()
 
-	auth, err := getFirebaseAuthentication(ctx, tracer)
+	auth, err := getFirebaseAuthentication(ctx)
 	if err != nil {
 		return err
 	}
@@ -116,28 +101,14 @@ func initNotifyJob(ctx context.Context) error {
 func initAPI(ctx context.Context) error {
 	validate := getValidate()
 
-	tpOpts, resOpts, err := ngtelgcp.GetTracerOpts()
-	if err != nil {
-		return err
-	}
-
-	tracer, tracerShutdown, err := ngtel.CreateTracer(
-		ctx, os.Getenv("ENABLE_TRACING") == "true", "pantry-api", tpOpts, resOpts,
-	)
-	if err != nil {
-		return err
-	}
-
-	defer tracerShutdown()
-
-	firestoreRepo, err := getFirestoreRepository(ctx, tracer)
+	firestoreRepo, err := getFirestoreRepository(ctx)
 	if err != nil {
 		return err
 	}
 
 	defer firestoreRepo.client.Close()
 
-	auth, err := getFirebaseAuthentication(ctx, tracer)
+	auth, err := getFirebaseAuthentication(ctx)
 	if err != nil {
 		return err
 	}
@@ -156,7 +127,13 @@ func main() {
 
 	nglog.SetUpLogger(os.Stderr, os.Getenv("LOG_FORMAT"), nglog.GetLogLevel(os.Getenv("LOG_LEVEL")))
 
-	var err error
+	tracerShutdown, err := ngtel.ConfigureTracing(ctx)
+	if err != nil {
+		slog.Error("failed configuring tracing", "err", err)
+		os.Exit(2)
+	}
+
+	defer tracerShutdown()
 
 	switch strings.ToLower(os.Getenv("MODE")) {
 	case "notify_job":
