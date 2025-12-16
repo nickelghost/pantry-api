@@ -78,7 +78,7 @@ func SetSpanNameMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Pattern != "" {
 			span := trace.SpanFromContext(r.Context())
-			span.SetName(fmt.Sprintf("%s %s", r.Method, r.Pattern))
+			span.SetName(r.Pattern)
 		}
 
 		next.ServeHTTP(w, r)
