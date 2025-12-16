@@ -127,7 +127,7 @@ func main() {
 
 	nglog.SetUpLogger(os.Stderr, os.Getenv("LOG_FORMAT"), nglog.GetLogLevel(os.Getenv("LOG_LEVEL")))
 
-	tracerShutdown, err := ngtel.ConfigureTracing(ctx)
+	tracerShutdown, err := ngtel.ConfigureOtel(ctx)
 	if err != nil {
 		slog.Error("failed configuring tracing", "err", err)
 		os.Exit(2)
