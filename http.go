@@ -14,6 +14,7 @@ import (
 	"github.com/nickelghost/nghttp"
 	"github.com/nickelghost/ngtel"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const httpHeaderTimeout = 1 * time.Second
@@ -33,6 +34,7 @@ func getRouter(
 ) http.Handler {
 	mux := http.NewServeMux()
 
+	// todo : add health
 	mux.HandleFunc("GET /locations", indexLocationsHandler(repo))
 	mux.HandleFunc("GET /locations/{id}", getLocationHandler(repo))
 	mux.HandleFunc("POST /locations", createLocationHandler(repo, validate))
@@ -59,19 +61,24 @@ func getRouter(
 	)
 	handler = nghttp.UseRequestLogging(handler, ngtel.GetGCPLogArgs)
 	handler = nghttp.UseRequestID(handler, "X-Request-ID")
-	handler = otelhttp.NewHandler(handler, "request", otelhttp.WithSpanNameFormatter(
-		func(operation string, r *http.Request) string { return fmt.Sprintf("%s %s", r.Method, r.Pattern) },
-	))
+	handler = OtelHTTPMiddleware(handler)
 
 	return handler
 }
 
-func useAuth(next http.Handler, auth authentication) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := auth.Check(r.Context(), r); err != nil {
-			nghttp.RespondGeneric(w, r, http.StatusUnauthorized, err, ngtel.GetGCPLogArgs)
+func OtelHTTPMiddleware(handler http.Handler) http.Handler {
+	return otelhttp.NewHandler(handler, "request", otelhttp.WithSpanNameFormatter(
+		func(operation string, r *http.Request) string {
+			return fmt.Sprintf("%s %s", r.Method, r.URL.Path)
+		},
+	))
+}
 
-			return
+func SetSpanNameMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Pattern != "" {
+			span := trace.SpanFromContext(r.Context())
+			span.SetName(fmt.Sprintf("%s %s", r.Method, r.Pattern))
 		}
 
 		next.ServeHTTP(w, r)
@@ -79,7 +86,7 @@ func useAuth(next http.Handler, auth authentication) http.Handler {
 }
 
 func indexLocationsHandler(repo repository) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		var tags *[]string
 
 		if val := r.URL.Query().Get("tags"); val != "" {
@@ -100,11 +107,11 @@ func indexLocationsHandler(repo repository) http.HandlerFunc {
 		}{Locations: locs, RemainingItems: remItems}
 
 		nghttp.Respond(w, r, http.StatusOK, nil, res, ngtel.GetGCPLogArgs)
-	}
+	})
 }
 
 func getLocationHandler(repo repository) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
 		var tags *[]string
@@ -130,11 +137,11 @@ func getLocationHandler(repo repository) http.HandlerFunc {
 		}{location: loc}
 
 		nghttp.Respond(w, r, http.StatusOK, nil, res, ngtel.GetGCPLogArgs)
-	}
+	})
 }
 
 func createLocationHandler(repo repository, validate *validator.Validate) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		body := struct {
 			Name string `json:"name"`
 		}{}
@@ -151,11 +158,11 @@ func createLocationHandler(repo repository, validate *validator.Validate) http.H
 		}
 
 		nghttp.RespondGeneric(w, r, http.StatusCreated, nil, ngtel.GetGCPLogArgs)
-	}
+	})
 }
 
 func updateLocationHandler(repo repository, validate *validator.Validate) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
 		body := struct {
@@ -174,11 +181,11 @@ func updateLocationHandler(repo repository, validate *validator.Validate) http.H
 		}
 
 		nghttp.RespondGeneric(w, r, http.StatusOK, nil, ngtel.GetGCPLogArgs)
-	}
+	})
 }
 
 func deleteLocationHandler(repo repository) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
 		if err := deleteLocation(r.Context(), repo, id); err != nil {
@@ -188,11 +195,11 @@ func deleteLocationHandler(repo repository) http.HandlerFunc {
 		}
 
 		nghttp.RespondGeneric(w, r, http.StatusOK, nil, ngtel.GetGCPLogArgs)
-	}
+	})
 }
 
 func createItemHandler(repo repository, validate *validator.Validate) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		var body writeItemParams
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			nghttp.RespondGeneric(w, r, http.StatusBadRequest, err, ngtel.GetGCPLogArgs)
@@ -208,11 +215,11 @@ func createItemHandler(repo repository, validate *validator.Validate) http.Handl
 		}
 
 		nghttp.RespondGeneric(w, r, http.StatusCreated, nil, ngtel.GetGCPLogArgs)
-	}
+	})
 }
 
 func updateItemHandler(repo repository, validate *validator.Validate) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
 		var body writeItemParams
@@ -229,11 +236,11 @@ func updateItemHandler(repo repository, validate *validator.Validate) http.Handl
 		}
 
 		nghttp.RespondGeneric(w, r, http.StatusOK, nil, ngtel.GetGCPLogArgs)
-	}
+	})
 }
 
 func updateItemLocationHandler(repo repository) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
 		body := struct {
@@ -252,11 +259,11 @@ func updateItemLocationHandler(repo repository) http.HandlerFunc {
 		}
 
 		nghttp.RespondGeneric(w, r, http.StatusOK, nil, ngtel.GetGCPLogArgs)
-	}
+	})
 }
 
 func deleteItemHandler(repo repository) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
 		if err := deleteItem(r.Context(), repo, id); err != nil {
@@ -266,5 +273,5 @@ func deleteItemHandler(repo repository) http.HandlerFunc {
 		}
 
 		nghttp.RespondGeneric(w, r, http.StatusOK, nil, ngtel.GetGCPLogArgs)
-	}
+	})
 }
