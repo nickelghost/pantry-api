@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -58,7 +59,9 @@ func getRouter(
 	)
 	handler = nghttp.UseRequestLogging(handler, ngtel.GetGCPLogArgs)
 	handler = nghttp.UseRequestID(handler, "X-Request-ID")
-	handler = otelhttp.NewHandler(handler, "request")
+	handler = otelhttp.NewHandler(handler, "request", otelhttp.WithSpanNameFormatter(
+		func(operation string, r *http.Request) string { return fmt.Sprintf("%s %s", r.Method, r.Pattern) },
+	))
 
 	return handler
 }
