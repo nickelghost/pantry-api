@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -13,8 +12,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/nickelghost/nghttp"
 	"github.com/nickelghost/ngtel"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel/trace"
 )
 
 const httpHeaderTimeout = 1 * time.Second
@@ -61,32 +58,13 @@ func getRouter(
 	)
 	handler = nghttp.UseRequestLogging(handler, ngtel.GetGCPLogArgs)
 	handler = nghttp.UseRequestID(handler, "X-Request-ID")
-	handler = OtelHTTPMiddleware(handler)
+	handler = ngtel.RequestMiddleware(handler)
 
 	return handler
 }
 
-func OtelHTTPMiddleware(handler http.Handler) http.Handler {
-	return otelhttp.NewHandler(handler, "request", otelhttp.WithSpanNameFormatter(
-		func(operation string, r *http.Request) string {
-			return fmt.Sprintf("%s %s", r.Method, r.URL.Path)
-		},
-	))
-}
-
-func SetSpanNameMiddleware(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Pattern != "" {
-			span := trace.SpanFromContext(r.Context())
-			span.SetName(r.Pattern)
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
 func indexLocationsHandler(repo repository) http.HandlerFunc {
-	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	return ngtel.SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		var tags *[]string
 
 		if val := r.URL.Query().Get("tags"); val != "" {
@@ -111,7 +89,7 @@ func indexLocationsHandler(repo repository) http.HandlerFunc {
 }
 
 func getLocationHandler(repo repository) http.HandlerFunc {
-	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	return ngtel.SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
 		var tags *[]string
@@ -141,7 +119,7 @@ func getLocationHandler(repo repository) http.HandlerFunc {
 }
 
 func createLocationHandler(repo repository, validate *validator.Validate) http.HandlerFunc {
-	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	return ngtel.SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		body := struct {
 			Name string `json:"name"`
 		}{}
@@ -162,7 +140,7 @@ func createLocationHandler(repo repository, validate *validator.Validate) http.H
 }
 
 func updateLocationHandler(repo repository, validate *validator.Validate) http.HandlerFunc {
-	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	return ngtel.SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
 		body := struct {
@@ -185,7 +163,7 @@ func updateLocationHandler(repo repository, validate *validator.Validate) http.H
 }
 
 func deleteLocationHandler(repo repository) http.HandlerFunc {
-	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	return ngtel.SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
 		if err := deleteLocation(r.Context(), repo, id); err != nil {
@@ -199,7 +177,7 @@ func deleteLocationHandler(repo repository) http.HandlerFunc {
 }
 
 func createItemHandler(repo repository, validate *validator.Validate) http.HandlerFunc {
-	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	return ngtel.SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		var body writeItemParams
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			nghttp.RespondGeneric(w, r, http.StatusBadRequest, err, ngtel.GetGCPLogArgs)
@@ -219,7 +197,7 @@ func createItemHandler(repo repository, validate *validator.Validate) http.Handl
 }
 
 func updateItemHandler(repo repository, validate *validator.Validate) http.HandlerFunc {
-	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	return ngtel.SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
 		var body writeItemParams
@@ -240,7 +218,7 @@ func updateItemHandler(repo repository, validate *validator.Validate) http.Handl
 }
 
 func updateItemLocationHandler(repo repository) http.HandlerFunc {
-	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	return ngtel.SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
 		body := struct {
@@ -263,7 +241,7 @@ func updateItemLocationHandler(repo repository) http.HandlerFunc {
 }
 
 func deleteItemHandler(repo repository) http.HandlerFunc {
-	return SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	return ngtel.SetSpanNameMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
 		if err := deleteItem(r.Context(), repo, id); err != nil {
