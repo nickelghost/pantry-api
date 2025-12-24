@@ -32,25 +32,30 @@ func getRouter(
 	validate *validator.Validate,
 	auth authentication,
 ) http.Handler {
-	mux := http.NewServeMux()
+	apiMux := http.NewServeMux()
 
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {})
-	mux.HandleFunc("GET /locations", indexLocationsHandler(repo))
-	mux.HandleFunc("GET /locations/{id}", getLocationHandler(repo))
-	mux.HandleFunc("POST /locations", createLocationHandler(repo, validate))
-	mux.HandleFunc("PUT /locations/{id}", updateLocationHandler(repo, validate))
-	mux.HandleFunc("DELETE /locations/{id}", deleteLocationHandler(repo))
-	mux.HandleFunc("POST /items", createItemHandler(repo, validate))
-	mux.HandleFunc("PUT /items/{id}", updateItemHandler(repo, validate))
-	mux.HandleFunc("PATCH /items/{id}/location", updateItemLocationHandler(repo))
-	mux.HandleFunc("DELETE /items/{id}", deleteItemHandler(repo))
-	mux.HandleFunc("/", nghttp.GetNotFoundHandler(ngtel.GetGCPLogArgs))
+	apiMux.HandleFunc("GET /locations", indexLocationsHandler(repo))
+	apiMux.HandleFunc("GET /locations/{id}", getLocationHandler(repo))
+	apiMux.HandleFunc("POST /locations", createLocationHandler(repo, validate))
+	apiMux.HandleFunc("PUT /locations/{id}", updateLocationHandler(repo, validate))
+	apiMux.HandleFunc("DELETE /locations/{id}", deleteLocationHandler(repo))
+	apiMux.HandleFunc("POST /items", createItemHandler(repo, validate))
+	apiMux.HandleFunc("PUT /items/{id}", updateItemHandler(repo, validate))
+	apiMux.HandleFunc("PATCH /items/{id}/location", updateItemLocationHandler(repo))
+	apiMux.HandleFunc("DELETE /items/{id}", deleteItemHandler(repo))
+	apiMux.HandleFunc("/", nghttp.GetNotFoundHandler(ngtel.GetGCPLogArgs))
 
-	var handler http.Handler = mux
+	var apiHandler http.Handler = apiMux
 
 	if auth != nil {
-		handler = authMiddleware(handler, auth)
+		apiHandler = authMiddleware(apiHandler, auth)
 	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {})
+	mux.Handle("/", apiHandler)
+
+	var handler http.Handler = mux
 
 	handler = nghttp.UseCORS(
 		handler,
