@@ -31,7 +31,7 @@ func getRouter(
 ) http.Handler {
 	mux := http.NewServeMux()
 
-	// todo : add health
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {})
 	mux.HandleFunc("GET /locations", indexLocationsHandler(repo))
 	mux.HandleFunc("GET /locations/{id}", getLocationHandler(repo))
 	mux.HandleFunc("POST /locations", createLocationHandler(repo, validate))
