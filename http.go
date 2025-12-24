@@ -14,7 +14,10 @@ import (
 	"github.com/nickelghost/ngtel"
 )
 
-const httpHeaderTimeout = 1 * time.Second
+const (
+	httpTimeout = 10 * time.Second
+	httpHeaderTimeout = 1 * time.Second
+)
 
 func getServer(handler http.Handler) *http.Server {
 	return &http.Server{
@@ -46,7 +49,7 @@ func getRouter(
 	var handler http.Handler = mux
 
 	if auth != nil {
-		handler = useAuth(handler, auth)
+		handler = authMiddleware(handler, auth)
 	}
 
 	handler = nghttp.UseCORS(

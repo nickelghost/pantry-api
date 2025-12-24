@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 )
 
@@ -21,34 +22,34 @@ func getNotificationTitle() string {
 }
 
 func notificationExpiriesToText(expiries []itemExpiry, comingExpiries []itemExpiry) string {
-	text := ""
+	var textBuilder strings.Builder
 
 	if len(expiries) > 0 {
-		text += "EXPIRED ITEMS\n-------------\n"
+		textBuilder.WriteString("EXPIRED ITEMS\n-------------\n")
 
 		for _, exp := range expiries {
 			// makes the int positive
 			daysOverdue := int(math.Abs(float64(exp.daysLeft)))
 
-			text += fmt.Sprintf("%s is %d day(s) overdue\n", exp.item.Name, daysOverdue)
+			fmt.Fprintf(&textBuilder, "%s is %d day(s) overdue\n", exp.item.Name, daysOverdue)
 		}
 	}
 
 	if len(comingExpiries) > 0 {
 		if len(expiries) > 0 {
-			text += "\n"
+			textBuilder.WriteString("\n")
 		}
 
-		text += "ITEMS ABOUT TO EXPIRE\n---------------------\n"
+		textBuilder.WriteString("ITEMS ABOUT TO EXPIRE\n---------------------\n")
 
 		for _, exp := range comingExpiries {
-			text += fmt.Sprintf("%s has %d day(s) left\n", exp.item.Name, exp.daysLeft)
+			fmt.Fprintf(&textBuilder, "%s has %d day(s) left\n", exp.item.Name, exp.daysLeft)
 		}
 	}
 
-	if text == "" {
-		text = "NO EXPIRING ITEMS"
+	if textBuilder.Len() == 0 {
+		textBuilder.WriteString("NO EXPIRING ITEMS")
 	}
 
-	return text
+	return textBuilder.String()
 }

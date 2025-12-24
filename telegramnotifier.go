@@ -18,14 +18,6 @@ type telegramNotifier struct {
 	chatID int
 }
 
-func (n telegramNotifier) getURL(subpath string) url.URL {
-	return url.URL{
-		Scheme: "https",
-		Host:   "api.telegram.org",
-		Path:   "/bot" + n.token + subpath,
-	}
-}
-
 func (n telegramNotifier) NotifyAboutItems(
 	ctx context.Context,
 	expiries []itemExpiry,
@@ -55,11 +47,19 @@ func (n telegramNotifier) NotifyAboutItems(
 		return fmt.Errorf("send request to telegram api: %w", err)
 	}
 
-	defer res.Body.Close()
+	defer res.Body.Close() //nolint:errcheck
 
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("%w: %s", errTelegramAPI, res.Status)
 	}
 
 	return nil
+}
+
+func (n telegramNotifier) getURL(subpath string) url.URL {
+	return url.URL{
+		Scheme: "https",
+		Host:   "api.telegram.org",
+		Path:   "/bot" + n.token + subpath,
+	}
 }

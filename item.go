@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"math"
 	"time"
 
@@ -47,14 +48,14 @@ func getItemDaysLeft(item item) *int {
 
 	// if has an expiry date, add number of remaining days to opts
 	if item.ExpiresAt != nil {
-		daysOpt := int(math.Ceil(time.Until(*item.ExpiresAt).Hours() / 24)) //nolint:gomnd
+		daysOpt := int(math.Ceil(time.Until(*item.ExpiresAt).Hours() / 24)) //nolint:mnd
 		daysOpts = append(daysOpts, daysOpt)
 	}
 
 	// if was opened and has lifespan, set the remaining lifetime days to opts
 	if item.OpenedAt != nil && item.Lifespan != nil {
-		lifespanHours := time.Duration(*item.Lifespan) * 24 * time.Hour                      //nolint:gomnd
-		daysOpt := int(math.Ceil(time.Until(item.OpenedAt.Add(lifespanHours)).Hours() / 24)) //nolint:gomnd
+		lifespanHours := time.Duration(*item.Lifespan) * 24 * time.Hour                      //nolint:mnd
+		daysOpt := int(math.Ceil(time.Until(item.OpenedAt.Add(lifespanHours)).Hours() / 24)) //nolint:mnd
 		daysOpts = append(daysOpts, daysOpt)
 	}
 
@@ -100,6 +101,8 @@ func notifyAboutItems(ctx context.Context, repo repository, n notifier, authRepo
 	}
 
 	if len(expiries) == 0 && len(comingExpiries) == 0 {
+		slog.Info("No items expired nor expired soon, skipping the notification.")
+
 		return nil
 	}
 

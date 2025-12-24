@@ -4,14 +4,28 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"cloud.google.com/go/firestore"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+func getFirestoreRepository(ctx context.Context) (firestoreRepository, error) {
+	client, err := firestore.NewClientWithDatabase(ctx,
+		os.Getenv("CLOUDSDK_CORE_PROJECT"),
+		os.Getenv("FIRESTORE_DATABASE"),
+	)
+	if err != nil {
+		return firestoreRepository{}, fmt.Errorf("failed to create firestore client: %w", err)
+	}
+
+	return firestoreRepository{client: client, tracer: otel.Tracer("firestore")}, nil
+}
 
 type firestoreRepository struct {
 	client *firestore.Client

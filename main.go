@@ -9,49 +9,76 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
-	"cloud.google.com/go/firestore"
-	firebase "firebase.google.com/go/v4"
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/nickelghost/nglog"
 	"github.com/nickelghost/ngtel"
-	"go.opentelemetry.io/otel"
 )
 
-const httpTimeout = 10 * time.Second
 
-func getValidate() *validator.Validate {
-	return validator.New(validator.WithRequiredStructEnabled())
+
+const errExitCode = 1
+const otelFailExitCode = 2
+
+var errOtelConfigFail = errors.New("failed configuring otel")
+
+func main() {
+	_ = godotenv.Load()
+	ctx := context.Background()
+
+	nglog.SetUpLogger(os.Stderr, os.Getenv("LOG_FORMAT"), nglog.GetLogLevel(os.Getenv("LOG_LEVEL")))
+
+	err := start(ctx)
+	switch {
+	case errors.Is(err, errOtelConfigFail):
+		slog.Error("failed configuring tracing", "err", err)
+		os.Exit(otelFailExitCode)
+	case err != nil:
+		slog.Error("failed to start", "err", err)
+		os.Exit(errExitCode)
+	}
 }
 
-func getFirebaseAuthentication(ctx context.Context) (firebaseAuthentication, error) {
-	app, err := firebase.NewApp(ctx, &firebase.Config{
-		ProjectID: os.Getenv("CLOUDSDK_CORE_PROJECT"),
-	})
+func start(ctx context.Context) (error) {
+	tracerShutdown, err := ngtel.ConfigureOtel(ctx)
 	if err != nil {
-		return firebaseAuthentication{}, fmt.Errorf("failed to create firebase app: %w", err)
+		return fmt.Errorf("%w: %w", errOtelConfigFail, err)
 	}
 
-	client, err := app.Auth(ctx)
-	if err != nil {
-		return firebaseAuthentication{}, fmt.Errorf("failed to create firebase auth client: %w", err)
+	defer tracerShutdown()
+
+	switch strings.ToLower(os.Getenv("MODE")) {
+	case "notify_job":
+		err = initNotifyJob(ctx)
+	default:
+		err = initAPI(ctx)
 	}
 
-	return firebaseAuthentication{client: client, tracer: otel.Tracer("firebase-auth")}, nil
+	return err
 }
 
-func getFirestoreRepository(ctx context.Context) (firestoreRepository, error) {
-	client, err := firestore.NewClientWithDatabase(ctx,
-		os.Getenv("CLOUDSDK_CORE_PROJECT"),
-		os.Getenv("FIRESTORE_DATABASE"),
-	)
+func initAPI(ctx context.Context) error {
+	validate := getValidate()
+
+	firestoreRepo, err := getFirestoreRepository(ctx)
 	if err != nil {
-		return firestoreRepository{}, fmt.Errorf("failed to create firestore client: %w", err)
+		return err
 	}
 
-	return firestoreRepository{client: client, tracer: otel.Tracer("firestore")}, nil
+	defer firestoreRepo.client.Close() //nolint:errcheck
+
+	auth, err := getFirebaseAuthentication(ctx)
+	if err != nil {
+		return err
+	}
+
+	srv := getServer(getRouter(firestoreRepo, validate, auth))
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		slog.Error("failed to start server", "err", err)
+	}
+
+	return nil
 }
 
 func initNotifyJob(ctx context.Context) error {
@@ -62,7 +89,7 @@ func initNotifyJob(ctx context.Context) error {
 		return err
 	}
 
-	defer firestoreRepo.client.Close()
+	defer firestoreRepo.client.Close() //nolint:errcheck
 
 	auth, err := getFirebaseAuthentication(ctx)
 	if err != nil {
@@ -98,52 +125,7 @@ func initNotifyJob(ctx context.Context) error {
 	return nil
 }
 
-func initAPI(ctx context.Context) error {
-	validate := getValidate()
 
-	firestoreRepo, err := getFirestoreRepository(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer firestoreRepo.client.Close()
-
-	auth, err := getFirebaseAuthentication(ctx)
-	if err != nil {
-		return err
-	}
-
-	srv := getServer(getRouter(firestoreRepo, validate, auth))
-	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		slog.Error("failed to start server", "err", err)
-	}
-
-	return nil
-}
-
-func main() {
-	_ = godotenv.Load()
-	ctx := context.Background()
-
-	nglog.SetUpLogger(os.Stderr, os.Getenv("LOG_FORMAT"), nglog.GetLogLevel(os.Getenv("LOG_LEVEL")))
-
-	tracerShutdown, err := ngtel.ConfigureOtel(ctx)
-	if err != nil {
-		slog.Error("failed configuring tracing", "err", err)
-		os.Exit(2)
-	}
-
-	defer tracerShutdown()
-
-	switch strings.ToLower(os.Getenv("MODE")) {
-	case "notify_job":
-		err = initNotifyJob(ctx)
-	default:
-		err = initAPI(ctx)
-	}
-
-	if err != nil {
-		slog.Error("failed to initialize", "err", err)
-		os.Exit(1)
-	}
+func getValidate() *validator.Validate {
+	return validator.New(validator.WithRequiredStructEnabled())
 }

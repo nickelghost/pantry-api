@@ -49,7 +49,7 @@ func getLocationsCommon(
 	items := []item{}
 	itemsErr := error(nil)
 
-	wg.Add(2) //nolint:gomnd
+	wg.Add(2) //nolint:mnd
 
 	go func() {
 		locs, locsErr = repo.GetLocations(ctx, ids)

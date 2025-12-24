@@ -97,13 +97,11 @@ func TestGetLocationsErrs(t *testing.T) {
 		errStr string
 	}{
 		{
-			//nolint:goerr113
-			repo:   &mockRepository{GetLocationsErr: errors.New("get locations failed")},
+			repo:   &mockRepository{GetLocationsErr: errors.New("get locations failed")}, //nolint:err113
 			errStr: "get locations failed",
 		},
 		{
-			//nolint:goerr113
-			repo:   &mockRepository{GetItemsErr: errors.New("get items failed")},
+			repo:   &mockRepository{GetItemsErr: errors.New("get items failed")}, //nolint:err113
 			errStr: "get items failed",
 		},
 	}
@@ -174,8 +172,7 @@ func TestLocationErrs(t *testing.T) {
 			errStr: "location not found",
 		},
 		{
-			//nolint:goerr113
-			repo:   &mockRepository{GetLocationsErr: errors.New("get locations failed")},
+			repo:   &mockRepository{GetLocationsErr: errors.New("get locations failed")}, //nolint:err113
 			errStr: "get locations failed",
 		},
 	}
@@ -229,8 +226,8 @@ func TestCreateLocation(t *testing.T) {
 
 	for _, in := range incorrectNames {
 		repo := &mockRepository{}
-		err := createLocation(context.Background(), repo, validate, in)
 
+		err := createLocation(context.Background(), repo, validate, in)
 		if err == nil {
 			t.Errorf("Did not return error on %s", in)
 		}
@@ -286,8 +283,8 @@ func TestUpdateLocation(t *testing.T) {
 
 	for _, in := range incorrectNames {
 		repo := &mockRepository{}
-		err := updateLocation(context.Background(), repo, validate, "id", in)
 
+		err := updateLocation(context.Background(), repo, validate, "id", in)
 		if err == nil {
 			t.Errorf("Did not return error on %s", in)
 		}

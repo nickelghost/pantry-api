@@ -1,20 +1,17 @@
 ---
+version: "2"
 linters:
-  presets:
-    - bugs
-    - comment
-    - complexity
-    - error
-    - format
-    - import
-    - metalinter
-    - module
-    - performance
-    - style
-    - test
-    - unused
+  default: all
   disable:
     - depguard
     - exhaustruct
+    - gochecknoglobals
+    - noinlineerr
     - ireturn
     - varnamelen
+    - wsl
+  settings:
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true

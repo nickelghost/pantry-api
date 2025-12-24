@@ -20,6 +20,46 @@ type infobipNotifier struct {
 	from    string
 }
 
+func (n infobipNotifier) NotifyAboutItems(
+	ctx context.Context,
+	expiries []itemExpiry,
+	comingExpiries []itemExpiry,
+	authRepo authenticationRepository,
+) error {
+	emails, err := authRepo.GetAllEmails(ctx)
+	if err != nil {
+		return fmt.Errorf("get all emails: %w", err)
+	}
+
+	infobipURL := n.getURL()
+	infobipURL.Path = "/email/3/send"
+
+	payload, contentType, err := n.getEmailPayload(
+		getNotificationTitle(), notificationExpiriesToText(expiries, comingExpiries), emails,
+	)
+	if err != nil {
+		return err
+	}
+
+	req, err := n.getRequest(ctx, http.MethodPost, infobipURL.String(), payload, contentType)
+	if err != nil {
+		return err
+	}
+
+	res, err := n.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("do http request: %w", err)
+	}
+
+	defer res.Body.Close() //nolint:errcheck
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("%s: %w", res.Status, errInfobipAPI)
+	}
+
+	return nil
+}
+
 func (n infobipNotifier) getURL() url.URL {
 	return url.URL{
 		Scheme: "https",
@@ -59,44 +99,4 @@ func (n infobipNotifier) getEmailPayload(subject string, text string, emails []s
 	}
 
 	return payload, writer.FormDataContentType(), nil
-}
-
-func (n infobipNotifier) NotifyAboutItems(
-	ctx context.Context,
-	expiries []itemExpiry,
-	comingExpiries []itemExpiry,
-	authRepo authenticationRepository,
-) error {
-	emails, err := authRepo.GetAllEmails(ctx)
-	if err != nil {
-		return fmt.Errorf("get all emails: %w", err)
-	}
-
-	infobipURL := n.getURL()
-	infobipURL.Path = "/email/3/send"
-
-	payload, contentType, err := n.getEmailPayload(
-		getNotificationTitle(), notificationExpiriesToText(expiries, comingExpiries), emails,
-	)
-	if err != nil {
-		return err
-	}
-
-	req, err := n.getRequest(ctx, http.MethodPost, infobipURL.String(), payload, contentType)
-	if err != nil {
-		return err
-	}
-
-	res, err := n.client.Do(req)
-	if err != nil {
-		return fmt.Errorf("do http request: %w", err)
-	}
-
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s: %w", res.Status, errInfobipAPI)
-	}
-
-	return nil
 }
