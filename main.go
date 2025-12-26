@@ -16,8 +16,10 @@ import (
 	"github.com/nickelghost/ngtel"
 )
 
-const errExitCode = 1
-const otelFailExitCode = 2
+const (
+	errExitCode      = 1
+	otelFailExitCode = 2
+)
 
 var errOtelConfigFail = errors.New("failed configuring otel")
 
@@ -37,7 +39,7 @@ func main() {
 	}
 }
 
-func start(ctx context.Context) (error) {
+func start(ctx context.Context) error {
 	tracerShutdown, err := ngtel.ConfigureOtel(ctx)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errOtelConfigFail, err)
@@ -121,7 +123,6 @@ func initNotifyJob(ctx context.Context) error {
 
 	return nil
 }
-
 
 func getValidate() *validator.Validate {
 	return validator.New(validator.WithRequiredStructEnabled())

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	httpTimeout = 10 * time.Second
+	httpTimeout       = 10 * time.Second
 	httpHeaderTimeout = 1 * time.Second
 )
 
