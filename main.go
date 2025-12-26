@@ -18,7 +18,7 @@ import (
 
 const (
 	errExitCode      = 1
-	otelFailExitCode = 2
+	otelFailExitCode = 4
 )
 
 var errOtelConfigFail = errors.New("failed configuring otel")
