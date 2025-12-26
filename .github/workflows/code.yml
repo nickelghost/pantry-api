@@ -1,20 +1,35 @@
 ---
-name: deploy
+name: code
 
 on:
-  workflow_run:
-    workflows: ["lint"]
-    branches: ["main"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
 
 env:
   PROJECT_ID: personal-419019
   IMAGE_NAME: europe-west1-docker.pkg.dev/personal-419019/pantry/api:${{ github.sha }}
 
 jobs:
+  golangci-lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.6
   build:
     runs-on: ubuntu-22.04
+    needs: golangci-lint
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -29,14 +44,15 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
       - name: Auth with Docker
         run: gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
-      - name: Build and push
+      - name: Build
         uses: docker/build-push-action@v5
         with:
           tags: ${{ env.IMAGE_NAME }}
-          push: true
+          push: ${{ github.ref == 'refs/heads/main' }}
   deploy:
     runs-on: ubuntu-22.04
     needs: build
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Auth with Google Cloud
         id: auth
