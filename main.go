@@ -11,12 +11,10 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv/autoload"
 	"github.com/nickelghost/nglog"
 	"github.com/nickelghost/ngtel"
 )
-
-
 
 const errExitCode = 1
 const otelFailExitCode = 2
@@ -24,7 +22,6 @@ const otelFailExitCode = 2
 var errOtelConfigFail = errors.New("failed configuring otel")
 
 func main() {
-	_ = godotenv.Load()
 	ctx := context.Background()
 
 	nglog.SetUpLogger(os.Stderr, os.Getenv("LOG_FORMAT"), nglog.GetLogLevel(os.Getenv("LOG_LEVEL")))
