@@ -69,5 +69,9 @@ func (repo firebaseAuthenticationRepository) GetAllEmails(ctx context.Context) (
 		emails = append(emails, user.Email)
 	}
 
+	if len(emails) == 0 {
+		return nil, errNoEmailAddressesFound
+	}
+
 	return emails, nil
 }

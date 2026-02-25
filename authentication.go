@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/nickelghost/nghttp"
 	"github.com/nickelghost/ngtel"
 )
+
+var errNoEmailAddressesFound = errors.New("no email addresses found")
 
 type authentication interface {
 	Check(ctx context.Context, r *http.Request) error
