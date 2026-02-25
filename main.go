@@ -74,7 +74,7 @@ func initAPI(ctx context.Context) error {
 
 	srv := getServer(getRouter(firestoreRepo, validate, auth))
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		slog.Error("failed to start server", "err", err)
+		return fmt.Errorf("failed to start server: %w", err)
 	}
 
 	return nil
