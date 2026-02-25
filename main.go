@@ -118,7 +118,7 @@ func initNotifyJob(ctx context.Context) error {
 	}
 
 	if err := notifyAboutItems(ctx, firestoreRepo, n, authRepo); err != nil {
-		slog.Error("failed to notify about items", "err", err)
+		return err
 	}
 
 	return nil
