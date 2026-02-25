@@ -16,6 +16,8 @@ type authentication interface {
 }
 
 type authenticationRepository interface {
+	// GetAllEmails returns all email addresses that should be notified about expiring items.
+	// If no email addresses are found, it returns errNoEmailAddressesFound.
 	GetAllEmails(ctx context.Context) ([]string, error)
 }
 
