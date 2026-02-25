@@ -31,10 +31,6 @@ type mockRepository struct {
 	UpdateItemID     string
 	UpdateItemParams writeItemParams
 
-	UpdateItemQuantityCalls int
-	UpdateItemQuantityID    string
-	UpdateItemQuantityValue *int
-
 	UpdateItemLocationCalls int
 	UpdateItemLocationID    string
 	UpdateItemLocationValue *string
