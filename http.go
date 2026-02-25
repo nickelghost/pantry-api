@@ -138,7 +138,12 @@ func createLocationHandler(repo repository, validate *validator.Validate) http.H
 		}
 
 		if err := createLocation(r.Context(), repo, validate, body.Name); err != nil {
-			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtel.GetGCPLogArgs)
+			status := http.StatusInternalServerError
+			if errors.Is(err, errValidation) {
+				status = http.StatusBadRequest
+			}
+
+			nghttp.RespondGeneric(w, r, status, err, ngtel.GetGCPLogArgs)
 
 			return
 		}
@@ -161,7 +166,12 @@ func updateLocationHandler(repo repository, validate *validator.Validate) http.H
 		}
 
 		if err := updateLocation(r.Context(), repo, validate, id, body.Name); err != nil {
-			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtel.GetGCPLogArgs)
+			status := http.StatusInternalServerError
+			if errors.Is(err, errValidation) {
+				status = http.StatusBadRequest
+			}
+
+			nghttp.RespondGeneric(w, r, status, err, ngtel.GetGCPLogArgs)
 
 			return
 		}
@@ -193,9 +203,13 @@ func createItemHandler(repo repository, validate *validator.Validate) http.Handl
 			return
 		}
 
-		err := createItem(r.Context(), repo, validate, body)
-		if err != nil {
-			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtel.GetGCPLogArgs)
+		if err := createItem(r.Context(), repo, validate, body); err != nil {
+			status := http.StatusInternalServerError
+			if errors.Is(err, errValidation) {
+				status = http.StatusBadRequest
+			}
+
+			nghttp.RespondGeneric(w, r, status, err, ngtel.GetGCPLogArgs)
 
 			return
 		}
@@ -216,7 +230,12 @@ func updateItemHandler(repo repository, validate *validator.Validate) http.Handl
 		}
 
 		if err := updateItem(r.Context(), repo, validate, id, body); err != nil {
-			nghttp.RespondGeneric(w, r, http.StatusInternalServerError, err, ngtel.GetGCPLogArgs)
+			status := http.StatusInternalServerError
+			if errors.Is(err, errValidation) {
+				status = http.StatusBadRequest
+			}
+
+			nghttp.RespondGeneric(w, r, status, err, ngtel.GetGCPLogArgs)
 
 			return
 		}

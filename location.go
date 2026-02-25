@@ -98,7 +98,7 @@ func getLocation(ctx context.Context, repo repository, id string, tags *[]string
 
 func createLocation(ctx context.Context, repo repository, validate *validator.Validate, name string) error {
 	if err := validate.Var(name, location{}.GetNameConstraints()); err != nil {
-		return fmt.Errorf("name validation: %w", err)
+		return fmt.Errorf("%w: %w", errValidation, err)
 	}
 
 	if err := repo.CreateLocation(ctx, name); err != nil {
@@ -110,7 +110,7 @@ func createLocation(ctx context.Context, repo repository, validate *validator.Va
 
 func updateLocation(ctx context.Context, repo repository, validate *validator.Validate, id string, name string) error {
 	if err := validate.Var(name, location{}.GetNameConstraints()); err != nil {
-		return fmt.Errorf("name validation: %w", err)
+		return fmt.Errorf("%w: %w", errValidation, err)
 	}
 
 	if err := repo.UpdateLocation(ctx, id, name); err != nil {

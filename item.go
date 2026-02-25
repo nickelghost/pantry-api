@@ -115,7 +115,7 @@ func notifyAboutItems(ctx context.Context, repo repository, n notifier, authRepo
 
 func createItem(ctx context.Context, repo repository, validate *validator.Validate, params writeItemParams) error {
 	if err := validate.Struct(params); err != nil {
-		return fmt.Errorf("invalid write item params: %w", err)
+		return fmt.Errorf("%w: %w", errValidation, err)
 	}
 
 	if err := repo.CreateItem(ctx, params); err != nil {
@@ -133,7 +133,7 @@ func updateItem(
 	params writeItemParams,
 ) error {
 	if err := validate.Struct(params); err != nil {
-		return fmt.Errorf("invalid write item params: %w", err)
+		return fmt.Errorf("%w: %w", errValidation, err)
 	}
 
 	if err := repo.UpdateItem(ctx, id, params); err != nil {
