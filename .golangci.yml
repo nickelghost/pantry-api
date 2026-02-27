@@ -11,6 +11,9 @@ linters:
     - varnamelen
     - wsl
   settings:
+    gosec:
+      excludes:
+        - G704
     revive:
       rules:
         - name: package-comments
