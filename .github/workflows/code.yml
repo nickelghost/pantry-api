@@ -31,19 +31,25 @@ jobs:
     runs-on: ubuntu-22.04
     needs: golangci-lint
     steps:
+      # get code
       - name: Check out repository code
         uses: actions/checkout@v4
+      # auth with Google Cloud AR (main only)
       - name: Auth with Google Cloud
         id: auth
         uses: google-github-actions/auth@v2
+        if: github.ref == 'refs/heads/main'
         with:
           credentials_json: "${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}"
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        if: github.ref == 'refs/heads/main'
         with:
           project_id: ${{ env.PROJECT_ID }}
       - name: Auth with Docker
+        if: github.ref == 'refs/heads/main'
         run: gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
+      # build and optionally push
       - name: Build
         uses: docker/build-push-action@v5
         with:
