@@ -14,6 +14,7 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/nickelghost/nglog"
 	"github.com/nickelghost/ngtel"
+	"google.golang.org/grpc/credentials/oauth"
 )
 
 const (
@@ -40,12 +41,17 @@ func main() {
 }
 
 func start(ctx context.Context) error {
-	tracerShutdown, err := ngtel.ConfigureOtel(ctx)
+	creds, err := oauth.NewApplicationDefault(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	tracerShutdown, err := ngtel.ConfigureOtel(ctx, os.Getenv("OTEL_TRACES_SAMPLER"), 1.0, &creds)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errOtelConfigFail, err)
 	}
 
-	defer tracerShutdown()
+	defer tracerShutdown(ctx)
 
 	switch strings.ToLower(os.Getenv("MODE")) {
 	case "notify_job":

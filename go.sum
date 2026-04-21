@@ -111,8 +111,8 @@ github.com/nickelghost/nghttp v0.0.3 h1:CPz6d17AtzlJpHxjE0SPxvYFzz+xuKzaAut4E0xh
 github.com/nickelghost/nghttp v0.0.3/go.mod h1:sn1B0dEtb+OJEOtAi2NgeCzBEyGjncnQVJyC3LpuzBw=
 github.com/nickelghost/nglog v0.0.3 h1:cSB0HVHsErTcsVqbtKRKhsSsrKf6Lpn6zumUQ0tmPGE=
 github.com/nickelghost/nglog v0.0.3/go.mod h1:qkidAKVyEHL/fDi3RpBHoZv76XrIkal0OXlg2kVMAME=
-github.com/nickelghost/ngtel v0.0.10 h1:XdXg9+E6RwZX36wqzQD95MDCAK6qMRsf6ZARTIuvXfc=
-github.com/nickelghost/ngtel v0.0.10/go.mod h1:wHjD/Dqaf4aa52Mt7qrgiPH3fzAEatrXWRvS544g4i4=
+github.com/nickelghost/ngtel v0.0.11 h1:G42tDCceZdwFmOkD1TDWT7HafK9Wxrh30YGZXKtbSww=
+github.com/nickelghost/ngtel v0.0.11/go.mod h1:2or9A5UoKKCVvI7CBejsuYJCfTTLJWT9kdcdHjKGVds=
 github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 h1:GFCKgmp0tecUJ0sJuv4pzYCqS9+RGSn52M3FUwPs+uo=
 github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10/go.mod h1:t/avpk3KcrXxUnYOhZhMXJlSEyie6gQbtLq5NM3loB8=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
@@ -165,12 +165,12 @@ go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.39.0 h1:cEf
 go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.39.0/go.mod h1:k1lzV5n5U3HkGvTCJHraTAGJ7MqsgL1wrGwTj1Isfiw=
 go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.39.0 h1:nKP4Z2ejtHn3yShBb+2KawiXgpn8In5cT7aO2wXuOTE=
 go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.39.0/go.mod h1:NwjeBbNigsO4Aj9WgM0C+cKIrxsZUaRmZUO7A8I7u8o=
-go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.39.0 h1:f0cb2XPmrqn4XMy9PNliTgRKJgS5WcL/u0/WRYGz4t0=
-go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.39.0/go.mod h1:vnakAaFckOMiMtOIhFI2MNH4FYrZzXCYxmb1LlhoGz8=
+go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.43.0 h1:88Y4s2C8oTui1LGM6bTWkw0ICGcOLCAI5l6zsD1j20k=
+go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.43.0/go.mod h1:Vl1/iaggsuRlrHf/hfPJPvVag77kKyvrLeD10kpMl+A=
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.39.0 h1:in9O8ESIOlwJAEGTkkf34DesGRAc/Pn8qJ7k3r/42LM=
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.39.0/go.mod h1:Rp0EXBm5tfnv0WL+ARyO/PHBEaEAT8UUHQ6AGJcSq6c=
-go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.39.0 h1:Ckwye2FpXkYgiHX7fyVrN1uA/UYd9ounqqTuSNAv0k4=
-go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.39.0/go.mod h1:teIFJh5pW2y+AN7riv6IBPX2DuesS3HgP39mwOspKwU=
+go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.43.0 h1:3iZJKlCZufyRzPzlQhUIWVmfltrXuGyfjREgGP3UUjc=
+go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.43.0/go.mod h1:/G+nUPfhq2e+qiXMGxMwumDrP5jtzU+mWN7/sjT2rak=
 go.opentelemetry.io/otel/exporters/prometheus v0.61.0 h1:cCyZS4dr67d30uDyh8etKM2QyDsQ4zC9ds3bdbrVoD0=
 go.opentelemetry.io/otel/exporters/prometheus v0.61.0/go.mod h1:iivMuj3xpR2DkUrUya3TPS/Z9h3dz7h01GxU+fQBRNg=
 go.opentelemetry.io/otel/exporters/stdout/stdoutlog v0.15.0 h1:0BSddrtQqLEylcErkeFrJBmwFzcqfQq9+/uxfTZq+HE=
