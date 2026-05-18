@@ -27,7 +27,7 @@ var errOtelConfigFail = errors.New("failed configuring otel")
 func main() {
 	ctx := context.Background()
 
-	nglog.SetUpLogger(os.Stderr, os.Getenv("LOG_FORMAT"), nglog.GetLogLevel(os.Getenv("LOG_LEVEL")))
+	nglog.SetUpLogger(os.Stderr, os.Getenv("LOG_FORMAT"), nglog.GetLogLevel(os.Getenv("LOG_LEVEL")), true)
 
 	err := start(ctx)
 	switch {

@@ -24,7 +24,7 @@ type authenticationRepository interface {
 func authMiddleware(next http.Handler, auth authentication) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := auth.Check(r.Context(), r); err != nil {
-			nghttp.RespondGeneric(w, r, http.StatusUnauthorized, err, ngtel.GetGCPLogArgs)
+			nghttp.Respond(w, r, http.StatusUnauthorized, err, nil, ngtel.GetGCPLogArgs)
 
 			return
 		}
