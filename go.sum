@@ -111,8 +111,8 @@ github.com/nickelghost/nghttp v0.2.0 h1:BjBygK2KCYVaxTE4pNoIUzltdsbrnzhsh8F4Jll7
 github.com/nickelghost/nghttp v0.2.0/go.mod h1:sn1B0dEtb+OJEOtAi2NgeCzBEyGjncnQVJyC3LpuzBw=
 github.com/nickelghost/nglog v0.1.0 h1:5c3LaeVEQ2JN5n86Zc+iJTCZAs0inYvM8S0qjcsYc5s=
 github.com/nickelghost/nglog v0.1.0/go.mod h1:qkidAKVyEHL/fDi3RpBHoZv76XrIkal0OXlg2kVMAME=
-github.com/nickelghost/ngtel v0.1.0 h1:+LAZSqXRn8SegWazZQ3cSE+oMQiC2piZX9TjgirTFLM=
-github.com/nickelghost/ngtel v0.1.0/go.mod h1:406bAOJOb16xCiXGVyxPZxeUSnCZUh2W8cw61ac2BdQ=
+github.com/nickelghost/ngtel v0.1.2 h1:drqIpgJoSbZbdzGq/QhQvi2llbqYXNCiqycyQwRr79I=
+github.com/nickelghost/ngtel v0.1.2/go.mod h1:PYeVlA+dQx3nUtncBhlnHR1rUe4Kq7mvl4vBgyKTL/o=
 github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 h1:GFCKgmp0tecUJ0sJuv4pzYCqS9+RGSn52M3FUwPs+uo=
 github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10/go.mod h1:t/avpk3KcrXxUnYOhZhMXJlSEyie6gQbtLq5NM3loB8=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=

@@ -11,7 +11,7 @@ require (
 	github.com/magefile/mage v1.15.0
 	github.com/nickelghost/nghttp v0.2.0
 	github.com/nickelghost/nglog v0.1.0
-	github.com/nickelghost/ngtel v0.1.0
+	github.com/nickelghost/ngtel v0.1.2
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/trace v1.43.0
 	google.golang.org/api v0.249.0
